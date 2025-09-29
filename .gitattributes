@@ -1,0 +1,30 @@
+# Normalize all text files to LF in repo
+* text=auto eol=lf
+
+# Windows-specific scripts keep CRLF if needed
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Explicitly binary (no line ending normalization)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.lockb binary
+
+# Fonts
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+
+# Snapshots / coverage artifacts (if ever committed accidentally)
+*.snap text eol=lf
