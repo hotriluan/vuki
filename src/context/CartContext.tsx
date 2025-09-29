@@ -1,6 +1,7 @@
 "use client";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef, useCallback, useState } from 'react';
-import { products } from '@/lib/data';
+import { products } from '@/lib/data'; // still used for pricing pipeline until service fully integrated
+import { ProductSchema } from '@/domain/product';
 import { Product } from '@/lib/types';
 import { cartReducer, COUPONS, type CartState, type AppliedCoupon, type CartItem } from './cartCore';
 import { computeTotals } from './cartCore';
@@ -149,7 +150,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       state,
-      add: (product: Product, qty = 1, variantId?: string | null) => dispatch({ type: 'ADD', productId: product.id, quantity: qty, variantId }),
+      add: (product: Product, qty = 1, variantId?: string | null) => {
+        if (process.env.NODE_ENV !== 'production') {
+          const parsed = ProductSchema.safeParse(product);
+          if (!parsed.success) {
+            // eslint-disable-next-line no-console
+            console.warn('[Cart] Attempted to add invalid product', product?.id, parsed.error.flatten());
+            return;
+          }
+        }
+        dispatch({ type: 'ADD', productId: product.id, quantity: qty, variantId });
+      },
       remove: (productId: string) => dispatch({ type: 'REMOVE', productId }),
       setQty: (productId: string, quantity: number) => dispatch({ type: 'SET_QTY', productId, quantity }),
       clear: () => dispatch({ type: 'CLEAR' }),

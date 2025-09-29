@@ -1,12 +1,11 @@
 "use client";
 import Link from 'next/link';
-import { getRelatedProducts } from '@/lib/related';
-import { findProductById } from '@/lib/data';
+import { productService } from '@/domain/product';
 import { ProductCard } from './ProductCard';
 import type { Product } from '@/lib/types';
 
-export function RelatedProducts({ product }: { product: Product }) {
-  const related = getRelatedProducts(product, 4);
+export async function RelatedProducts({ product }: { product: Product }) {
+  const related = await productService.related(product, 4);
   if (related.length === 0) return null;
   return (
     <section className="mt-16">

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { Suspense } from 'react';
-import { findProductBySlug, findCategoryBySlug, products } from '@/lib/data';
+import { findCategoryBySlug } from '@/lib/data';
+import { productService } from '@/domain/product';
 import { Price } from '../../../components/Price';
 import AddToCartButton from './AddToCartButton';
 import { buildProductMetadata, buildProductJsonLd } from '@/lib/seo';
@@ -29,20 +30,21 @@ interface Props { params: { slug: string }; }
 
 interface GenerateMetadataProps { params: { slug: string } }
 
-export function generateMetadata({ params }: GenerateMetadataProps): Metadata {
-  const product = findProductBySlug(params.slug);
+export async function generateMetadata({ params }: GenerateMetadataProps): Promise<Metadata> {
+  const product = await productService.getBySlug(params.slug);
   if (!product) return {};
   return buildProductMetadata(product) as Metadata;
 }
 
 export const revalidate = 3600; // 1h ISR for product pages
 
-export function generateStaticParams() {
-  return products.map(p => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const list = await productService.list();
+  return list.map(p => ({ slug: p.slug }));
 }
 
-export default function ProductPage({ params }: Props) {
-  const product = findProductBySlug(params.slug);
+export default async function ProductPage({ params }: Props) {
+  const product = await productService.getBySlug(params.slug);
   if (!product) return notFound();
   const image = product.images[0];
   const agg = getAggregatedRating(product.id);
