@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { searchProducts, type SearchResultItem } from '@/lib/search';
+import { searchProducts, type SearchResultItem, ensureIndexLoad } from '@/lib/search';
+import { products } from '@/lib/data';
 import Link from 'next/link';
 
 interface SearchModalProps {
@@ -15,6 +16,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [active, setActive] = useState(0);
   const [visible, setVisible] = useState(open); // for mount/unmount
   const [recent, setRecent] = useState<string[]>([]);
+  const [loadingIndex, setLoadingIndex] = useState(false);
+  const [indexReady, setIndexReady] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const prevFocus = useRef<HTMLElement | null>(null);
@@ -24,23 +27,33 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   // Debounce search
   useEffect(() => {
     if (!open) return;
+    const q = query.trim();
+    // If query too short → clear
+    if (q.length < 2) {
+      window.clearTimeout(debounceRef.current);
+      if (results.length) setResults([]);
+      setActive(0);
+      return;
+    }
     window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       (async () => {
-        const r = await searchProducts(query);
+        if (!indexReady) {
+          setLoadingIndex(true);
+          try { await ensureIndexLoad(); setIndexReady(true); } finally { setLoadingIndex(false); }
+        }
+        const r = await searchProducts(q);
         setResults(r);
         setActive(0);
-        if (query.trim().length >= 2) {
-          setRecent(prev => {
-            const next = [query.trim(), ...prev.filter(q => q !== query.trim())].slice(0, 8);
-            try { localStorage.setItem('recent-searches', JSON.stringify(next)); } catch {}
-            return next;
-          });
-        }
+        setRecent(prev => {
+          const next = [q, ...prev.filter(x => x !== q)].slice(0, 8);
+          try { localStorage.setItem('recent-searches', JSON.stringify(next)); } catch {}
+          return next;
+        });
       })();
-    }, 150);
+    }, 220); // slightly longer debounce to reduce fetch churn
     return () => window.clearTimeout(debounceRef.current);
-  }, [query, open]);
+  }, [query, open, indexReady]);
 
   // Load recent at mount/open
   useEffect(() => {
@@ -80,18 +93,35 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       return;
     }
     if (!results.length) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive(a => (a + 1) % results.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive(a => (a - 1 + results.length) % results.length);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const r = results[active];
-      if (r) {
-        onClose();
-        window.location.href = `/product/${r.product.slug}`;
+    switch (e.key) {
+      case 'ArrowDown': {
+        e.preventDefault();
+        setActive(a => (a + 1) % results.length);
+        break;
+      }
+      case 'ArrowUp': {
+        e.preventDefault();
+        setActive(a => (a - 1 + results.length) % results.length);
+        break;
+      }
+      case 'Home': {
+        e.preventDefault();
+        setActive(0);
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        setActive(results.length - 1);
+        break;
+      }
+      case 'Enter': {
+        e.preventDefault();
+        const r = results[active];
+        if (r) {
+          onClose();
+          window.location.href = `/product/${r.product.slug}`;
+        }
+        break;
       }
     }
   }, [results, active, onClose]);
@@ -108,6 +138,14 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     document.addEventListener('focus', handleFocus, true);
     return () => document.removeEventListener('focus', handleFocus, true);
   }, [open]);
+
+  // Preload index when opening (once) without waiting user typing
+  useEffect(() => {
+    if (open && !indexReady) {
+      setLoadingIndex(true);
+      ensureIndexLoad().then(() => setIndexReady(true)).finally(() => setLoadingIndex(false));
+    }
+  }, [open, indexReady]);
 
   if (!visible) return null;
 
@@ -175,8 +213,23 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               </div>
             </div>
           )}
-          {query.length >= 2 && results.length === 0 && (
-            <div className="p-4 text-sm text-gray-500">No results</div>
+          {query.length >= 2 && (loadingIndex || !indexReady) && (
+            <div className="p-4 text-xs text-gray-500 animate-pulse">Đang tải index…</div>
+          )}
+          {query.length >= 2 && !loadingIndex && indexReady && results.length === 0 && (
+            <div className="p-4 text-sm text-gray-600 space-y-3">
+              <div>No results – gợi ý nổi bật:</div>
+              <div className="flex flex-col gap-2">
+                {products.filter(p => p.featured).slice(0,3).map(p => (
+                  <Link
+                    key={p.slug}
+                    href={`/product/${p.slug}`}
+                    onClick={onClose}
+                    className="text-sm text-brand-accent hover:underline"
+                  >{p.name}</Link>
+                ))}
+              </div>
+            </div>
           )}
           {results.map((r, i) => (
             <Link

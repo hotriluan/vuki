@@ -7,6 +7,7 @@ import { CartProvider } from '../context/CartContext';
 import { WishlistProvider } from '../context/WishlistContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import { getSiteUrl, siteName, siteTagline } from '@/lib/seo';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,15 +37,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} flex min-h-screen flex-col`}>
-        <CurrencyProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </WishlistProvider>
-          </CartProvider>
-        </CurrencyProvider>
+        <ThemeProvider>
+          <CurrencyProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </WishlistProvider>
+            </CartProvider>
+          </CurrencyProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

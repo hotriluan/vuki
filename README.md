@@ -8,6 +8,7 @@
 Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Router) + TypeScript + Tailwind CSS.
 
 ## Tính năng hiện tại
+
 - Layout cơ bản (Header, Footer)
 - Trang chủ + Featured products
 - Thành phần ProductCard, Price
@@ -30,8 +31,19 @@ Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Rout
 - Recent searches (localStorage) + clear
 - Animation SearchModal (fade + scale, unmount trễ)
 - Sitemap.xml + robots.txt + Breadcrumb JSON-LD (Home → Category → Product)
+- Dark mode toggle (persist localStorage, system fallback)
+- Lọc danh mục: sắp xếp (newest / price-asc / price-desc) + khoảng giá (min/max) qua query params
+- Kiểm tra commit message (commitlint) + CI chạy Node 18 & 20 (matrix)
+- Lọc danh mục theo size (multi-select) qua query param `sizes=sz-39,sz-40`
+- Recently viewed products (LRU 8 mục, localStorage)
+- Related products (ưu tiên cùng category, fallback bổ sung đủ số lượng)
+- Mock product reviews + aggregate rating (JSON-LD `aggregateRating`)
+- User-submitted reviews (client merge, localStorage)
+- Category page Breadcrumb JSON-LD (Home → Category)
+- Size filter hiển thị cả size hết hàng (disabled + stock count)
 
 ## Chạy dự án
+
 ```bash
 pnpm install
 pnpm dev
@@ -41,18 +53,23 @@ pnpm lint
 ```
 
 ### Phân tích bundle (Bundle Analyzer)
+
 Chạy build kèm phân tích kích thước:
+
 ```bash
 npm run analyze
 ```
+
 Sau khi build, mở trang tĩnh được in ra trong terminal (thường ở `.next/analyze` hoặc hiển thị link). Biến môi trường `ANALYZE=1` kích hoạt plugin `@next/bundle-analyzer`.
 
 Gợi ý tối ưu sau khi xem report:
+
 - Tách dynamic import thêm (ví dụ: mô-đun currency rates nếu sau này gọi API lớn).
 - Kiểm tra kích thước Fuse.js (đã lazy loaded—không xuất hiện trong initial bundles nếu chưa mở SearchModal).
 - Dò các dependency lớn bất ngờ (moment, lodash full, v.v.) nếu thêm mới.
 
 ## Cấu trúc thư mục chính
+
 ```
 src/
   app/         # App Router pages & layout
@@ -61,6 +78,7 @@ src/
 ```
 
 ## Định Dạng Tiền Tệ (Đã triển khai)
+
 Utility: `src/lib/currency.ts`
 
 ```ts
@@ -71,42 +89,55 @@ formatVnd(1590000); // "1.590.000 ₫"
 `Price` component sử dụng formatter này và chuẩn hoá tính phần trăm giảm giá thông qua biến `discountPercent`.
 
 ## Tiếp theo (sẽ bổ sung)
+
 - Tối ưu image nâng cao (blur dynamic theo ảnh, prefetch priority)
 - Thêm ngôn ngữ (i18n chuỗi giao diện)
+- Thêm test bổ sung cho Header / WishlistButton / SEO JSON-LD
 
 ## Search Autocomplete (Đã triển khai)
+
 ## Multi-Currency (Đã triển khai)
+
 File: `src/context/CurrencyContext.tsx`
 
 Mock rates (base VND):
+
 ```
 VND: 1
 USD: 24000
 EUR: 26000
 ```
+
 API context:
+
 ```
 const { currency, setCurrency, format, convert } = useCurrency();
 ```
+
 `Price` + CartDrawer hiển thị theo currency hiện tại (tính toán nội bộ vẫn dựa trên VND). Persist bằng localStorage `currency:v1`.
 
 Mở rộng gợi ý:
+
 - Fetch rates từ API (ex: exchangerate.host) qua route cache 12h.
 - Thêm lựa chọn định dạng số thập phân động.
 - Hiển thị badge “≈ giá trị nội tệ” khi khác VND.
 
 ## Infinite Scroll Category (Đã triển khai)
+
 Component: `InfiniteCategory` (client) sử dụng `IntersectionObserver`.
 Props chính: `slug`, `pageSize=12`.
 Fallback nút “Tải thêm” & switch chế độ tự động/thủ công.
 
 ## Recent Searches (Đã triển khai)
+
 Key lưu: `recent-searches` (tối đa 8 mục, LRU đơn giản). Hiển thị khi query rỗng.
 
 ## Animation SearchModal
+
 Fade + scale (150ms). Delay unmount giúp mượt hơn. State `visible` giữ component cho tới khi kết thúc animation.
 
 ## Sitemap & Robots & Breadcrumb
+
 Routes: `/robots.txt`, `/sitemap.xml`.
 Sinh URL từ categories + products.
 Breadcrumb JSON-LD thêm vào trang sản phẩm (`ld-breadcrumb`).
@@ -123,6 +154,7 @@ Phím tắt:
 | Enter | Mở sản phẩm đang chọn |
 
 Logic Fuse:
+
 ```ts
 threshold: 0.38
 keys: name (0.6), description (0.3), slug (0.1)
@@ -134,51 +166,47 @@ includeMatches: true (để highlight)
 Highlight: Dùng `dangerouslySetInnerHTML` với nội dung đã escape (anti-XSS) và wrap phần khớp bằng `<mark>`.
 
 Mở rộng tương lai:
+
 - Index theo category, variant SKU
 - Tải index async (dynamic import) nếu data lớn
 - Kết nối service search SaaS (Algolia / Meilisearch) khi sản phẩm nhiều
 
 ## Nâng cấp tương lai
-- Kết nối CMS (Sanity / Strapi) hoặc backend riêng
-- Thanh toán (Stripe / PayOS / ZaloPay...) 
-- Authentication (Clerk / NextAuth)
-- Tìm kiếm (Algolia / Meilisearch)
-- Internationalization (i18n)
 
-## Triển khai (Deployment)
+- Mini checkout form (name, email, address, province) lưu localStorage
+- Ước tính phí ship theo tỉnh (HCM, Hà Nội, Đà Nẵng, Khác) + freeship ngưỡng
+- VAT 10% (config `src/config/pricing.ts`) hiển thị dòng thuế
+- Coupon có expiresAt + chặn áp nếu hết hạn / đã có coupon khác
+- Toggle VAT runtime (checkbox giỏ hàng) + persist localStorage
+- Validation checkout (yêu cầu name>=2, email hợp lệ, address>=8, province) mới enable thanh toán
+- Inline coupon error message thay vì chỉ browser validity
 
-### Vercel (khuyến nghị)
-1. Tạo repo GitHub và push mã nguồn.
-2. Đăng nhập https://vercel.com → New Project → Import repo.
-3. Framework: tự nhận Next.js. Build command mặc định: `next build`. Output: `.next`.
-4. Environment variables (nếu có API sau này) thêm ở tab Settings → Environment Variables.
-5. Deploy → Sau build thành công, test các route: `/`, `/product/...`, `/category/...`.
+### VAT Toggle & Checkout Validation (Bổ sung)
 
-### Docker (tùy chọn)
-```
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml* package-lock.json* yarn.lock* ./
-# Chọn 1 trình quản lý gói, ví dụ pnpm:
-RUN corepack enable && pnpm install --frozen-lockfile
+Tại trang giỏ hàng và CartDrawer:
 
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
+- Checkbox VAT 10% cho phép bật/tắt thuế runtime (persist `vatEnabled`).
+- Nút thanh toán disabled cho tới khi form mini checkout hợp lệ.
+- Lỗi coupon hiển thị inline (mã không hợp lệ / đã hết hạn / đã có mã khác / chưa đạt minSubtotal).
+  WORKDIR /app
+  ENV NODE_ENV=production
+  COPY --from=build /app/.next ./.next
+  COPY --from=build /app/public ./public
+  COPY package.json .
+  EXPOSE 3000
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY package.json .
-EXPOSE 3000
-CMD ["npm","start"]
-```
+Mở rộng thực tế bổ sung:
+
+- Mini checkout form: Thu thập tạm thời `name, email, address, province` để ước tính ship (không gửi backend).
+- Province shipping: base fee theo mapping (`TP Hồ Chí Minh:30k`, `Hà Nội:35k`, `Đà Nẵng:32k`, `Khác:40k`). Nếu đạt ngưỡng ≥ 1.000.000 sau giảm → miễn phí.
+- VAT 10%: tính trên (subtotal - discount) rồi cộng vào tổng cuối (floor). Có test so sánh VAT on/off.
+- Coupon expiration: trường `expiresAt`. Nếu hết hạn hoặc đã có coupon khác → từ chối áp (hiển thị reason). Test expired coupon mô phỏng layer apply.
+  CMD ["npm","start"]
+
+````
 
 ## Checklist Production Cơ Bản
+
 - [ ] Thiết lập `NODE_ENV=production` khi chạy build.
 - [ ] Bật Image Optimization (đã có remotePatterns Unsplash, thêm domain riêng nếu có CDN).
 - [ ] Thêm favicon, Open Graph images (`app/icon.png`, `app/opengraph-image.png`).
@@ -186,9 +214,11 @@ CMD ["npm","start"]
 - [ ] Thiết lập Analytics (Vercel Analytics / GA4) khi cần.
 
 ## SEO & Metadata (Đã triển khai)
+
 File helper: `src/lib/seo.ts`
 
 Chức năng chính:
+
 - `getSiteUrl()` lấy base URL từ `NEXT_PUBLIC_SITE_URL` (fallback `http://localhost:3000`).
 - Root layout dùng `metadataBase`, `title.template`, Open Graph + Twitter defaults.
 - `buildProductMetadata(product)` tạo metadata động (title, description cắt 155 ký tự, canonical, OG image).
@@ -197,6 +227,7 @@ Chức năng chính:
 Trang sản phẩm `app/product/[slug]/page.tsx` export `generateMetadata` và chèn JSON-LD qua `<Script id="ld-product" ... />`.
 
 Ví dụ JSON-LD sinh ra:
+
 ```json
 {
   "@context": "https://schema.org",
@@ -213,9 +244,10 @@ Ví dụ JSON-LD sinh ra:
     "url": "https://example.com/product/urban-runner-white"
   }
 }
-```
+````
 
 Thiết lập môi trường (ví dụ Vercel):
+
 ```bash
 NEXT_PUBLIC_SITE_URL=https://example.com
 ```
@@ -223,7 +255,9 @@ NEXT_PUBLIC_SITE_URL=https://example.com
 Lưu ý: Nếu có nhiều biến thể với giá khác nhau, có thể mở rộng `offers` thành mảng hoặc dùng `AggregateOffer`.
 
 ## Skeleton & Blur Placeholder (Đã triển khai)
+
 Thành phần liên quan:
+
 - `src/components/BlurImage.tsx`: wrapper cho `next/image` với `placeholder="blur"` + `blurDataURL` tĩnh (`BLUR_PLACEHOLDER`).
 - `src/lib/placeholder.ts`: chứa base64 PNG 1x1 làm mờ.
 - `src/components/ProductImage.tsx`: thêm fallback 404 + blur.
@@ -232,12 +266,15 @@ Thành phần liên quan:
 - `app/product/[slug]/loading.tsx`: skeleton chi tiết sản phẩm.
 
 Mở rộng tương lai:
+
 - Tạo blur động từ ảnh thật (lấy qua edge function / LQIP / plaiceholder).
 - Dùng `priority` cho hero image đầu trang.
 - Prefetch bằng `IntersectionObserver` cho viewport sắp xuất hiện (sau này nếu có pagination).
 
 ## Thiết Lập Alias Import
+
 Thêm vào `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -246,19 +283,20 @@ Thêm vào `tsconfig.json`:
   }
 }
 ```
+
 Sau đó đổi import: `import { products } from '@/lib/data';`
 
 ## Persist Giỏ Hàng (Đã triển khai)
+
 Key: `cart:v1` (version hiện tại 2 — thêm coupon; variant thêm trường `variantId` vẫn backward compatible).
 
 Lưu trữ:
+
 ```jsonc
 {
-  "items": [
-    { "productId": "p-1", "quantity": 2, "variantId": "sz-40" }
-  ],
+  "items": [{ "productId": "p-1", "quantity": 2, "variantId": "sz-40" }],
   "coupon": { "code": "SALE10", "kind": "percent", "value": 10, "minSubtotal": 500000 },
-  "version": 2
+  "version": 2,
 }
 ```
 
@@ -267,7 +305,9 @@ Actions chính: `ADD`, `SET_QTY`, `REMOVE`, `CLEAR`, `APPLY_COUPON`, `REMOVE_COU
 Tính toán dẫn xuất: `subtotal`, `discountAmount`, `shippingFee`, `total`.
 
 ## Trang Giỏ Hàng & Cart Drawer (Đã triển khai)
+
 Hiển thị:
+
 - Danh sách sản phẩm với biến thể (nếu có) + ảnh + đơn giá đã tính variant
 - Điều chỉnh số lượng (floor = 1), xoá từng dòng, xoá toàn bộ
 - Mã giảm giá (validate điều kiện minSubtotal) + hiển thị giảm giá
@@ -275,6 +315,7 @@ Hiển thị:
 - Tổng tiền = subtotal - discount + shipping
 
 Logic giá:
+
 1. Bắt đầu từ `salePrice` nếu < `price` else `price`
 2. Nếu variant có `overridePrice` → dùng trực tiếp
 3. Else nếu variant có `priceDiff` → cộng chênh lệch
@@ -291,16 +332,18 @@ Coupon mẫu:
 | FREESHIP | fixed | 30.000 | ≥ 300.000 |
 | VIP50K | fixed | 50.000 | ≥ 800.000 |
 
-Ví dụ áp percent: discount = floor(subtotal * value / 100).
+Ví dụ áp percent: discount = floor(subtotal \* value / 100).
 
 ## Tích Hợp Backend / CMS
-| Nhu cầu | Giải pháp nhanh | Ghi chú |
-|---------|-----------------|--------|
-| Sửa sản phẩm không deploy lại | Sanity / Strapi | Sanity nhanh cho content + ảnh |
-| Quản lý kho & đơn hàng | Medusa (self-host) | Cần DB + Redis |
-| Thanh toán VN | Tích hợp PayOS / ZaloPay / Momo | Tạo route API riêng |
+
+| Nhu cầu                       | Giải pháp nhanh                 | Ghi chú                        |
+| ----------------------------- | ------------------------------- | ------------------------------ |
+| Sửa sản phẩm không deploy lại | Sanity / Strapi                 | Sanity nhanh cho content + ảnh |
+| Quản lý kho & đơn hàng        | Medusa (self-host)              | Cần DB + Redis                 |
+| Thanh toán VN                 | Tích hợp PayOS / ZaloPay / Momo | Tạo route API riêng            |
 
 ## Roadmap Gợi Ý (Cập nhật)
+
 1. Multi-currency / i18n
 2. Pagination / infinite scroll
 3. CMS / Payment integration
@@ -310,9 +353,11 @@ Ví dụ áp percent: discount = floor(subtotal * value / 100).
 7. Sitemap.xml + robots.txt + breadcrumbs
 
 ## Testing (Đã khởi tạo)
+
 Stack: Vitest + jsdom + Testing Library.
 
 Chạy toàn bộ test:
+
 ```bash
 npm test
 ```
@@ -322,10 +367,12 @@ Cấu hình: `vitest.config.ts` (environment jsdom, globals bật). File setup: 
 Vị trí test: đặt cạnh logic trong thư mục `__tests__` (ví dụ: `src/context/__tests__/cartCore.test.ts`).
 
 Phạm vi hiện tại:
+
 - Unit test cho `cartCore` (reducer + pricing pipeline + coupon + shipping rule)
 - Edge cases: clamp số lượng >= 1, discount không vượt subtotal, total không âm
 
 Định hướng mở rộng:
+
 - Test component: `CartDrawer`, `SearchModal` (keyboard navigation, recent searches)
 - Snapshot JSON-LD sản phẩm & breadcrumb
 - Kiểm tra multi-currency hiển thị format đúng khi đổi context
@@ -333,11 +380,13 @@ Phạm vi hiện tại:
 - Thiết lập GitHub Actions CI (node 18/20) chạy `npm ci && npm test && npm run build`
 
 Mẹo viết test thuần logic:
+
 1. Tách business logic ra file thuần (`cartCore.ts`) không import React → test nhanh, không cần render.
 2. Dùng factory nhỏ `baseState()` tránh lặp.
 3. Kiểm tra giá trị dẫn xuất (subtotal, discount, shipping, total) thay vì nội bộ từng bước.
 
 Ví dụ (rút gọn) kiểm tra coupon percent:
+
 ```ts
 const state = { items: [{ productId: 'p-1', quantity: 1 }], coupon: COUPONS[0] };
 const totals = computeTotals(state, products as any);
@@ -350,9 +399,11 @@ Badge (thay OWNER/REPO sau khi push):
 `![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)`
 
 Chạy test với coverage:
+
 ```bash
 npm run test:coverage
 ```
+
 Report tạo trong thư mục `coverage/` (HTML mở `coverage/index.html`).
 
 Phạm vi coverage đã giới hạn lại chỉ đo `src/**/*.{ts,tsx}` và exclude `.next/**` + file helper tĩnh để % phản ánh đúng hơn.
@@ -360,15 +411,18 @@ Tiếp tục tăng coverage bằng cách viết test cho các component chưa te
 
 GitHub Actions workflow: `.github/workflows/ci.yml`
 Chạy các bước:
+
 1. Lint (`next lint`)
 2. Test (vitest + coverage)
 3. Build sản phẩm (`next build`)
 
 Muốn enforce ngưỡng coverage: bản Vitest 1.6.0 chưa dùng object threshold trực tiếp trong config như bản mới; có thể:
+
 - Nâng cấp Vitest + plugin coverage đồng bộ phiên bản
 - Hoặc script đọc `coverage/coverage-final.json` và fail nếu < mức yêu cầu (custom script Node nhỏ)
 
 Ví dụ exclude bổ sung (cập nhật `vitest.config.ts`):
+
 ```ts
 coverage: {
   provider: 'v8',
@@ -382,18 +436,20 @@ coverage: {
 ```
 
 ### Kế hoạch tăng Coverage đề xuất
-| Ưu tiên | Mục | Lý do |
-|---------|-----|-------|
-| Cao | CartDrawer interaction | Core UX checkout |
-| Cao | WishlistContext | Persist & toggle logic |
-| Trung | InfiniteCategory | IntersectionObserver fallback logic |
-| Trung | SEO helpers | Bảo đảm JSON-LD đúng schema |
-| Thấp | Layout/Footer static | Ít rủi ro |
+
+| Ưu tiên | Mục                    | Lý do                               |
+| ------- | ---------------------- | ----------------------------------- |
+| Cao     | CartDrawer interaction | Core UX checkout                    |
+| Cao     | WishlistContext        | Persist & toggle logic              |
+| Trung   | InfiniteCategory       | IntersectionObserver fallback logic |
+| Trung   | SEO helpers            | Bảo đảm JSON-LD đúng schema         |
+| Thấp    | Layout/Footer static   | Ít rủi ro                           |
 
 Script gợi ý custom threshold (tạo file `scripts/check-coverage.mjs`):
+
 ```js
 import fs from 'fs';
-const data = JSON.parse(fs.readFileSync('coverage/coverage-summary.json','utf8'));
+const data = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
 const { statements } = data.total;
 const MIN = 40; // ví dụ
 if (statements.pct < MIN) {
@@ -401,19 +457,23 @@ if (statements.pct < MIN) {
   process.exit(1);
 }
 ```
+
 Sau đó thêm vào workflow sau bước test.
 
-
 ## Khắc Phục PATH Node (Ghi chú)
+
 Nếu gặp lại lỗi PATH với `node`, thêm alias vào profile PowerShell:
+
 ```powershell
 notepad $PROFILE
 Set-Alias node "C:\Program Files\nodejs\node.exe"
 Set-Alias npm  "C:\Program Files\nodejs\npm.cmd"
 ```
+
 Lưu, mở shell mới.
 
 ## License
+
 Dùng tự do cho học tập / MVP.
 
 ## Đưa Lên GitHub (Repository Setup)
@@ -439,12 +499,15 @@ git push -u origin main
 ```
 
 Sau push:
+
 - Vào tab Actions: kiểm tra workflow CI đã chạy thành công.
 - Badge Codecov hiển thị sau run đầu tiên có báo cáo coverage.
 - Có thể bật branch protection: yêu cầu CI pass trước khi merge.
 
 ### Gợi Ý Quy Ước Commit
+
 Sử dụng conventional commits:
+
 - feat: chức năng mới
 - fix: sửa lỗi
 - chore: việc phụ trợ (config, build)
@@ -452,17 +515,118 @@ Sử dụng conventional commits:
 - test: bổ sung / sửa test
 - docs: tài liệu
 
+CI sẽ kiểm tra commit messages trên Pull Request (job commitlint). Nếu cần kiểm tra cục bộ:
+
+```bash
+npx commitlint --from=HEAD~1 --to=HEAD
+```
+
+Hoặc cài husky hook (tùy chọn) để pre-commit / commit-msg.
+
+### Dark Mode
+
+Có `ThemeContext` lưu giá trị: `light | dark | system`. Toggle trong `Header` (🌙 / ☀️). Lưu ở `localStorage:theme`. Khi chọn `system` sẽ tự động theo `prefers-color-scheme`.
+
+Tailwind bật `darkMode: 'class'` và lớp `dark` gắn vào `<html>`. Một số utility surface thêm trong `globals.css`.
+
+### Lọc Danh Mục (Category Filters)
+
+Trang `/category/[slug]` có form client-side:
+
+- Sort: `newest | price-asc | price-desc`
+- Min / Max price: cập nhật qua query param (`?sort=price-asc&min=500000&max=1500000`)
+- Size filter: nhiều size cùng lúc (`sizes=sz-39,sz-41`) — nút size toggle trạng thái, gửi lên URL (giúp share link)
+  Thao tác thay đổi sử dụng `router.replace` (shallow) để không reset scroll & tránh full reload.
+
+Logic xử lý filter được gom vào `src/lib/filter.ts` (giữ thuần để dễ test / tái sử dụng). Size filter lọc theo variant id (không hiển thị sản phẩm nếu không có ít nhất một variant thuộc tập size chọn).
+
+Mở rộng gợi ý:
+
+- Thêm hiển thị count còn hàng bên cạnh size.
+- Disable size hết hàng (stock=0) với tooltip.
+- Bật sync state → URL debounce (khi nhiều input sau này).
+
+### Recently Viewed (Đã triển khai)
+
+File logic: `src/lib/recentlyViewed.ts`
+Component: `src/components/RecentlyViewed.tsx`
+
+Key localStorage: `recently-viewed:v1`
+Đặc điểm:
+
+- LRU tối đa 8 mục
+- Không duplicate (đẩy lên đầu nếu xem lại)
+- Ghi nhận qua `requestIdleCallback` hoặc fallback `setTimeout` để tránh chặn render đầu
+
+### Related Products (Đã triển khai)
+
+File logic: `src/lib/related.ts`
+Component: `src/components/RelatedProducts.tsx`
+
+Chiến lược chọn:
+
+1. Lấy sản phẩm khác cùng ít nhất 1 category với sản phẩm gốc, sort theo `createdAt` mới nhất.
+2. Nếu chưa đủ `limit` (mặc định 4) → bổ sung sản phẩm khác bất kỳ (tránh trùng & tránh chính nó) đến đủ.
+
+Mở rộng tương lai:
+
+- Chấm điểm dựa trên số category trùng + số lần xem (advanced personalization)
+- Thêm fallback khi dataset nhỏ: ẩn hoàn toàn block nếu < 2 sản phẩm.
+
+### Reviews & Aggregate Rating (Mock + User Submission)
+
+Logic chính:
+
+- Mock reviews + helper: `src/lib/reviews.ts`
+- User reviews lưu localStorage key `user-reviews:v1` (merge vào mock, sort newest first)
+- Component UI: `src/components/ProductReviews.tsx`
+- Aggregate tính lại realtime sau mỗi submit (client state)
+- JSON-LD enrich chỉ dùng mock ban đầu (user review không tác động SSR SEO)
+
+Form submission:
+
+- Mở bằng nút "Viết đánh giá"
+- Input: Tên (required), Rating (select 1–5), Nhận xét (>= 8 ký tự)
+- Submit thêm review (prepend), reset form, đóng form
+- Giới hạn lưu tối đa 50 user reviews
+
+Tương lai có thể thêm:
+
+- Limit 1 review/user
+- Sort: highest / lowest rating
+- Highlight pros/cons parsing
+
+Ví dụ snippet JSON-LD (mock aggregate):
+
+```json
+{
+  "@type": "Product",
+  "name": "Urban Runner White",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.0",
+    "reviewCount": 3
+  }
+}
+```
+
+### CI Matrix Node Versions
+
+Workflow `ci.yml` chạy song song trên Node 18 và 20 để phát hiện sớm khác biệt môi trường (đặc biệt thay đổi engine / deprecation).
+
 ## Secrets & Biến Môi Trường
 
 Không commit file `.env` (đã ignore). Tạo file mẫu `/.env.example` nếu thêm biến mới.
 
 Biến đề xuất:
+
 ```
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 # FUTURE_API_BASE=https://api.example.com
 ```
 
 ### Codecov Token
+
 - Public repo: có thể KHÔNG cần token (Codecov dùng upload không token).
 - Private repo: tạo token trong Codecov → Settings → Repository → Copy token.
 - Thêm vào GitHub: Settings → Secrets and variables → Actions → New repository secret:
@@ -472,15 +636,168 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 Workflow sẽ tự động sử dụng (nếu script upload có tham chiếu biến env). Đảm bảo không echo token trong logs.
 
 ### An toàn thêm
+
 - Không commit dữ liệu người dùng / API keys.
 - Nếu lỡ commit `.env`: xoá file rồi `git commit --amend` (trước push) hoặc dùng `git filter-repo` / BFG để gỡ lịch sử (sau push public).
 
 ## CI Tối Ưu Đề Xuất (Mở Rộng)
+
 - Thêm job kiểm tra kích thước bundle: chạy `npm run analyze` rồi dùng script parse `.next/analyze/client.html` (regex) để fail nếu vượt ngưỡng.
 - Thêm badge Lighthouse (dùng GitHub Action chạy headless Chrome).
 - Matrix Node versions: 18.x và 20.x để sớm phát hiện khác biệt.
 
 ## Phần Bảo Mật & Mở Rộng Tiềm Năng
+
 - Khi thêm auth: luôn tách secret JWT/SESSION_KEY vào `Actions Secrets`.
 - Dùng `NEXT_PUBLIC_` prefix chỉ cho biến an toàn public.
 - Thêm kiểm tra `process.env.NODE_ENV !== 'production'` trước khi log debug nặng.
+
+### Bổ sung mới (Pricing Breakdown, Countdown, Debounce, Auto Province, i18n)
+
+Các nâng cấp bổ sung gần đây:
+
+- Shared `PricingBreakdown` component gom hiển thị `subtotal / discount / shipping / VAT / total` dùng chung giữa CartPage & CartDrawer.
+- Coupon expiry countdown (<24h): hiển thị đồng hồ `HH:MM:SS` cập nhật mỗi giây; hết hạn realtime hiển thị trạng thái.
+- Debounced checkout persistence: lưu form mini checkout vào localStorage sau 300ms idle thay vì mỗi ký tự.
+- Auto province detection: Blur ô địa chỉ sẽ cố gắng suy ra tỉnh (HCM, Hà Nội, Đà Nẵng) từ segment cuối của chuỗi nếu user chưa chọn.
+- I18n skeleton (vi/en): `LanguageContext` + hàm `t(key)` áp dụng cho label giá, form, coupon, trạng thái. Persist `lang:v1` & toggle nhanh trong CartPage / CartDrawer.
+- Tests mới: PricingBreakdown render, i18n toggle đổi “Giỏ hàng” ↔ “Cart”, auto detect province, countdown coupon trong 24h, đảm bảo total vẫn tính đúng sau refactor.
+
+Lợi ích:
+1. Giảm lặp mã & chuẩn hoá layout pricing.
+2. Cải thiện UX (urgency countdown, auto province, thông báo rõ ràng đa ngôn ngữ cơ bản).
+3. Hiệu năng tốt hơn (debounce writes localStorage, countdown chỉ kích hoạt khi cần <24h & có expiresAt).
+4. Dễ mở rộng i18n (có thể tách dictionary JSON, thêm plural rules sau này).
+
+Hướng mở rộng tương lai:
+- Thêm full danh sách 63 tỉnh + fuzzy match.
+- Đồng bộ countdown hết hạn tự động gỡ coupon (thay vì chờ reload/apply lại).
+- Tooltips giải thích dòng thuế & phí ship trong PricingBreakdown.
+- Namespace i18n: `cart`, `common`, lazy load JSON theo locale.
+- Tự động detect ngôn ngữ từ `navigator.language` lần đầu.
+
+## 5. Performance & Bundle (Mới)
+
+| Hạng mục | Trạng thái | Chi tiết triển khai |
+|----------|-----------|----------------------|
+| Split code theo route chuyên sâu | ĐÃ LÀM | `ProductReviews`, `RelatedProducts`, `RecentlyViewed` chuyển sang `next/dynamic` với fallback, tách khỏi initial product bundle. Reviews & RecentlyViewed tắt SSR để tránh hydrate không cần thiết ban đầu. |
+| Prefetch/SSG sản phẩm & danh mục | ĐÃ LÀM | Export `generateStaticParams` + `revalidate` ở `app/product/[slug]` (3600s) và `app/category/[slug]` (1800s). Giúp ISR thay vì full SSR runtime. |
+| Edge middleware/API cache | ĐÃ LÀM (cơ bản) | Route `GET /api/products` (runtime edge) trả JSON sản phẩm kèm header `cache-control: public, s-maxage=300, stale-while-revalidate=3600`. Chuẩn bị nền tảng nếu chuyển dữ liệu sang fetch động. |
+| Thêm compression | GHI CHÚ | Vercel auto Brotli/Gzip. Nếu self-host: thêm Fastify `@fastify/compress` hoặc Nginx `gzip on; brotli_static on;`. Chưa cần code thay đổi. |
+| Lazy hydration secondary UI | ĐANG MỞ RỘNG | Suspense fallback nhẹ cho khối reviews/related/recently giúp FCP nhanh hơn. |
+
+### Giải thích lựa chọn
+- Dynamic import giúp giảm thời gian TTFB + JS initial parse cho trang product: người dùng thấy ảnh + thông tin chính nhanh hơn, các block nặng (reviews) tải sau.
+- ISR (`revalidate`) giữ SEO ổn định nhưng vẫn có thể cập nhật dữ liệu mock trong tương lai mà không rebuild toàn site.
+- Edge API route tạo precedent: Khi chuyển data sang DB, có thể áp dụng cache tầng edge và stale-while-revalidate để làm tươi nền.
+
+### Mở rộng tiềm năng tiếp theo
+1. Tạo `route segment config` bật `preferredRegion` (nếu Vercel) để kéo product page gần user.
+2. Dùng `next/headers` + `draftMode` cho preview không cache.
+3. Prefetch thông minh: sử dụng `onMouseEnter` prefetch dynamic chunk reviews khi user hover anchor tới section.
+4. Sử dụng `size-limit` hoặc `bundlesize` CI để fail build khi vượt threshold (ví dụ mỗi page < 180KB gzip initial JS).
+5. Áp dụng Partial Hydration / RSC hoá nhiều component tĩnh (Price, ProductCard container) – giữ client logic nhỏ (AddToCartButton).
+6. Kiểm tra tree-shaking: đảm bảo không import toàn bộ thư viện (Fuse.js đã chỉ import default tối ưu). Nếu thêm date lib → chọn `date-fns` thay moment.
+
+### Kiểm tra sau tối ưu
+Chạy `ANALYZE=1 npm run build` và so sánh trước/sau:
+- Giảm kích thước bundle trang `/product/[slug]` (JS initial) do 3 block tách ra.
+- Time-to-interaction phần chính không chờ tải reviews.
+
+### Self-host Compression Ghi chú
+Fastify server (pseudo):
+```ts
+import compress from '@fastify/compress';
+app.register(compress, { global: true, encodings: ['br', 'gzip'] });
+```
+Nginx snippet:
+```nginx
+gzip on;
+gzip_types text/css application/javascript application/json image/svg+xml;
+gzip_min_length 1024;
+```
+
+### Theo dõi
+- Thêm script Lighthouse CI để đo lường FCP/LCP sau khi tách dynamic.
+- Ghi lại baseline trong README (sẽ cập nhật khi có số liệu thực tế).
+
+## 6. Search Nâng Cao (Mới)
+## 7. Testing & Chất Lượng
+
+Mục tiêu nâng chuẩn chất lượng code:
+
+- SearchModal: Đã bổ sung test điều hướng bàn phím (Arrow, Home, End, Escape), highlight segments.
+- CartDrawer: Test flow coupon (hợp lệ, không hợp lệ, huỷ bỏ).
+- Wishlist: Test tránh duplicate + persistence vào localStorage sau rehydrate.
+- SEO JSON-LD: Snapshot + assert field bắt buộc (context, type, offers...).
+- Layout/Footer: Smoke test render.
+- Hiệu năng Search Index: Đo thời gian `ensureIndexLoad()` < 120ms với mock fetch.
+
+### Gợi ý mở rộng
+
+- Mutation Testing: Có thể tích hợp Stryker hoặc `vitest --mutation` (khi feature stable) để đo mutation score. Bước khởi đầu:
+  1. Cài: `npm i -D @stryker-mutator/core @stryker-mutator/typescript-checker`.
+  2. Tạo `stryker.conf.json` tối giản:
+     ```json
+     { "mutate": ["src/**/*.{ts,tsx}"], "testRunner": "vitest", "coverageAnalysis": "off" }
+     ```
+  3. Chạy: `npx stryker run`.
+  4. Thiết lập threshold (ví dụ) trong config: `"thresholds": { "high": 80, "low": 60, "break": 50 }`.
+
+- Tracer hiệu năng nâng cao: Bọc thêm `performance.mark()` quanh các đoạn build Fuse phức tạp, hoặc dùng Web Vitals khi lên production.
+
+
+Các cải tiến vừa bổ sung cho trải nghiệm tìm kiếm:
+
+| Hạng mục | Trạng thái | Ghi chú |
+|----------|-----------|---------|
+| Debounce input | ĐÃ CẬP NHẬT | Thời gian debounce tăng 150→220ms để giảm số lần xây results khi người gõ nhanh. |
+| Lazy load index JSON | ĐÃ LÀM | File `public/search-index.json` (chỉ trường nhỏ: id, slug, name, description, featured) fetch lần đầu mở modal. |
+| Loading state index | ĐÃ LÀM | Hiển thị “Đang tải index…” (animate-pulse) trước khi Fuse sẵn sàng. |
+| Fuzzy slug weight | ĐÃ LÀM | Tăng weight slug 0.1→0.20, threshold 0.38→0.42, distance 120 để tolerant sai chính tả / thiếu ký tự. |
+| No results fallback | ĐÃ LÀM | Thay “No results” bằng gợi ý top featured (tối đa 3) giúp giữ user trong flow. |
+| Externalize index | ĐÃ LÀM | Giúp tách data khỏi JS bundle; dễ chuyển sang prebuild/bulk fetch sau này. |
+
+### Cấu trúc index
+`public/search-index.json` – ví dụ:
+```json
+[
+  { "id": "p-1", "slug": "urban-runner-white", "name": "Urban Runner White", "description": "Lightweight everyday sneaker...", "featured": true }
+]
+```
+Có thể regenerate bằng script build riêng (chưa thêm) khi sản phẩm động.
+
+### Fuse config mới
+```ts
+keys: [
+  { name: 'name', weight: 0.55 },
+  { name: 'description', weight: 0.25 },
+  { name: 'slug', weight: 0.20 }
+],
+threshold: 0.42,
+distance: 120,
+ignoreLocation: true,
+includeMatches: true
+```
+
+### UI States mới
+1. Loading: Hiện khi index hoặc Fuse đang load lần đầu.
+2. No results: Render featured recommendations.
+3. Recent searches: Không đổi (xuất hiện khi query rỗng và có lịch sử).
+
+### Test cập nhật
+- Điều chỉnh thời gian giả lập debounce 220ms.
+- Thêm test fallback: query “zzzzz” → nhận “No results – gợi ý nổi bật” + links.
+
+### Hướng mở rộng tiếp
+1. Prefetch index khi người dùng focus vào input header (anticipatory fetch).
+2. Thêm scoring cho “featured” (boost) hoặc popularity count.
+3. Chunk index lớn (shard) nếu > vài nghìn sản phẩm.
+4. Streaming search: hiển thị kết quả incremental khi dataset lớn (Web Worker).
+5. Synonym map (ví dụ: “runner” ~ “sneaker”).
+6. Fallback accent-insensitive matching (normalize dấu tiếng Việt). Hiện rely vào lowercase base.
+
+### Tác động hiệu năng
+- Giảm kích thước bundle vì không bundle full `products` vào Fuse build client ban đầu.
+- Index fetch dùng `cache: force-cache` → browser có thể reuse cho các lần mở sau.
+

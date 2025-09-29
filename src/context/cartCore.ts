@@ -1,13 +1,15 @@
 import type { Product } from '@/lib/types';
 
 export interface CartItem { productId: string; quantity: number; variantId?: string | null; }
-export interface AppliedCoupon { code: string; kind: 'percent' | 'fixed'; value: number; minSubtotal?: number; }
-export interface CartState { items: CartItem[]; coupon?: AppliedCoupon | null; }
+export interface AppliedCoupon { code: string; kind: 'percent' | 'fixed'; value: number; minSubtotal?: number; expiresAt?: string; }
+export interface CheckoutInfo { name: string; email: string; address: string; province?: string; }
+export interface CartState { items: CartItem[]; coupon?: AppliedCoupon | null; checkout?: CheckoutInfo; }
 
 export const COUPONS: AppliedCoupon[] = [
-  { code: 'SALE10', kind: 'percent', value: 10, minSubtotal: 500_000 },
-  { code: 'FREESHIP', kind: 'fixed', value: 30_000, minSubtotal: 300_000 },
-  { code: 'VIP50K', kind: 'fixed', value: 50_000, minSubtotal: 800_000 }
+  { code: 'SALE10', kind: 'percent', value: 10, minSubtotal: 500_000, expiresAt: '2099-12-31T23:59:59Z' },
+  { code: 'FREESHIP', kind: 'fixed', value: 30_000, minSubtotal: 300_000, expiresAt: '2099-12-31T23:59:59Z' },
+  { code: 'VIP50K', kind: 'fixed', value: 50_000, minSubtotal: 800_000, expiresAt: '2099-12-31T23:59:59Z' },
+  { code: 'OLD5', kind: 'percent', value: 5, minSubtotal: 0, expiresAt: '2000-01-01T00:00:00Z' }
 ];
 
 export type Action =
@@ -17,7 +19,8 @@ export type Action =
   | { type: 'CLEAR' }
   | { type: 'REPLACE'; state: CartState }
   | { type: 'APPLY_COUPON'; coupon: AppliedCoupon | null }
-  | { type: 'REMOVE_COUPON' };
+  | { type: 'REMOVE_COUPON' }
+  | { type: 'SET_CHECKOUT'; checkout: Partial<CheckoutInfo> };
 
 export function cartReducer(state: CartState, action: Action): CartState {
   switch (action.type) {
@@ -47,13 +50,16 @@ export function cartReducer(state: CartState, action: Action): CartState {
       return { ...state, coupon: action.coupon };
     case 'REMOVE_COUPON':
       return { ...state, coupon: null };
+    case 'SET_CHECKOUT':
+      const prev = state.checkout || { name: '', email: '', address: '' };
+      return { ...state, checkout: { ...prev, ...action.checkout } };
     default:
       return state;
   }
 }
 
 // Pricing helpers
-export interface PricingTotals { subtotal: number; discountAmount: number; shippingFee: number; total: number; }
+export interface PricingTotals { subtotal: number; discountAmount: number; shippingFee: number; tax: number; total: number; }
 
 export function computeSubtotal(items: CartItem[], products: Product[]): number {
   return items.reduce((sum, it) => {
@@ -78,16 +84,21 @@ export function computeDiscount(subtotal: number, coupon?: AppliedCoupon | null)
   return Math.min(coupon.value, subtotal);
 }
 
-export function computeShipping(subtotal: number, discount: number): number {
+export function computeShipping(subtotal: number, discount: number, baseFee: number): number {
   const after = subtotal - discount;
   if (after <= 0) return 0;
-  return after >= 1_000_000 ? 0 : 30_000;
+  if (after >= 1_000_000) return 0; // free threshold
+  return baseFee;
 }
 
-export function computeTotals(state: CartState, products: Product[]): PricingTotals {
+export function computeTotals(state: CartState, products: Product[], options?: { baseShipping?: number; vatEnabled?: boolean; vatRate?: number }): PricingTotals {
   const subtotal = computeSubtotal(state.items, products);
   const discountAmount = computeDiscount(subtotal, state.coupon);
-  const shippingFee = computeShipping(subtotal, discountAmount);
-  const total = Math.max(0, subtotal - discountAmount + shippingFee);
-  return { subtotal, discountAmount, shippingFee, total };
+  const shippingFee = computeShipping(subtotal, discountAmount, options?.baseShipping ?? 30_000);
+  const baseForTax = Math.max(0, subtotal - discountAmount);
+  const vatEnabled = options?.vatEnabled ?? true;
+  const vatRate = options?.vatRate ?? 0.1; // 10%
+  const tax = vatEnabled ? Math.floor(baseForTax * vatRate) : 0;
+  const total = Math.max(0, baseForTax + shippingFee + tax);
+  return { subtotal, discountAmount, shippingFee, tax, total };
 }

@@ -70,4 +70,17 @@ describe('WishlistContext', () => {
     // state should restore (effect runs async microtask; renderHook already runs effects)
     expect(result.current.items.sort()).toEqual(['p-10', 'p-9'].sort());
   });
+
+  it('does not duplicate after rehydrate when adding existing again', () => {
+    let result = setup();
+    act(() => {
+      result.current.add('p-11');
+    });
+    // simulate reload
+    result = setup();
+    act(() => {
+      result.current.add('p-11');
+    });
+    expect(result.current.items).toEqual(['p-11']);
+  });
 });

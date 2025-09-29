@@ -1,16 +1,17 @@
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { CartProvider } from '@/context/CartContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import { CartDrawer } from '../CartDrawer';
+import { LanguageProvider } from '@/context/LanguageContext';
 import * as data from '@/lib/data';
 
 // Minimal mock products access if needed
 const firstTwo = data.products.slice(0,2);
 
 function Wrapper({ children }: { children: React.ReactNode }) {
-  return <CurrencyProvider><CartProvider>{children}</CartProvider></CurrencyProvider>;
+  return <LanguageProvider><CurrencyProvider><CartProvider>{children}</CartProvider></CurrencyProvider></LanguageProvider>;
 }
 
 describe('CartDrawer', () => {
@@ -43,7 +44,7 @@ describe('CartDrawer', () => {
     const stored = { items: [{ productId: firstTwo[0].id, quantity: 1 }], coupon: null, version: 2 };
     localStorage.setItem('cart:v1', JSON.stringify(stored));
     openWith();
-    const input = screen.getByPlaceholderText('Mã');
+  const input = screen.getByPlaceholderText(/(Mã giảm giá|coupon)/i);
     const form = input.closest('form')!;
     act(() => {
       fireEvent.change(input, { target: { value: 'SALE10' } });
@@ -61,5 +62,50 @@ describe('CartDrawer', () => {
     openWith();
     act(() => { fireEvent.click(screen.getByLabelText('Xoá sản phẩm')); });
     expect(screen.getByText(/Chưa có sản phẩm/i)).toBeInTheDocument();
+  });
+
+  it('does not decrement quantity below 1', () => {
+    const stored = { items: [{ productId: firstTwo[0].id, quantity: 1 }], coupon: null, version: 2 };
+    localStorage.setItem('cart:v1', JSON.stringify(stored));
+    openWith();
+    const dec = screen.getByLabelText('Giảm') as HTMLButtonElement;
+    expect(dec).toBeDisabled();
+    act(() => { fireEvent.click(dec); });
+    // Still 1
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  it('increments then removes item', () => {
+    const stored = { items: [{ productId: firstTwo[0].id, quantity: 1 }], coupon: null, version: 2 };
+    localStorage.setItem('cart:v1', JSON.stringify(stored));
+    openWith();
+    const inc = screen.getByLabelText('Tăng');
+    act(() => fireEvent.click(inc));
+    expect(screen.getByText('2')).toBeInTheDocument();
+    act(() => fireEvent.click(screen.getByLabelText('Xoá sản phẩm')));
+    expect(screen.getByText(/Chưa có sản phẩm/i)).toBeInTheDocument();
+  });
+
+  it('does not apply coupon if subtotal below min threshold', () => {
+    const stored = { items: [{ productId: 'p-4', quantity: 1 }], coupon: null, version: 2 };
+    localStorage.setItem('cart:v1', JSON.stringify(stored));
+    openWith();
+  const input = screen.getByPlaceholderText(/(Mã giảm giá|coupon)/i);
+    const form = input.closest('form')!;
+    act(() => {
+      fireEvent.change(input, { target: { value: 'VIP50K' } });
+      fireEvent.submit(form);
+    });
+    // Coupon badge not present since applyCoupon returned false
+    expect(screen.queryByText(/VIP50K/i)).not.toBeInTheDocument();
+  });
+
+  it('closes on ESC key', () => {
+    const stored = { items: [{ productId: firstTwo[0].id, quantity: 1 }], coupon: null, version: 2 };
+    localStorage.setItem('cart:v1', JSON.stringify(stored));
+    const onClose = vi.fn();
+    openWith(onClose);
+    act(() => { fireEvent.keyDown(window, { key: 'Escape' }); });
+    expect(onClose).toHaveBeenCalled();
   });
 });

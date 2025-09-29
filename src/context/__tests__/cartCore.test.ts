@@ -25,11 +25,13 @@ describe('cartReducer', () => {
 });
 
 describe('pricing logic', () => {
-  it('applies percent coupon correctly', () => {
-    let state: CartState = { items: [{ productId: 'p-1', quantity: 1 }], coupon: COUPONS.find(c => c.code === 'SALE10') };
+  it('applies percent coupon correctly (with VAT)', () => {
+    const state: CartState = { items: [{ productId: 'p-1', quantity: 1 }], coupon: COUPONS.find(c => c.code === 'SALE10') };
     const totals = computeTotals(state, products as any);
     expect(totals.discountAmount).toBeGreaterThan(0);
-    expect(totals.total).toBe(totals.subtotal - totals.discountAmount + totals.shippingFee);
+    const baseForTax = totals.subtotal - totals.discountAmount;
+    const expected = baseForTax + totals.shippingFee + totals.tax;
+    expect(totals.total).toBe(expected);
   });
 
   it('free shipping threshold works', () => {

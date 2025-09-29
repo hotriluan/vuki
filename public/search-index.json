@@ -1,0 +1,30 @@
+[
+  {
+    "id": "p-1",
+    "slug": "urban-runner-white",
+    "name": "Urban Runner White",
+    "description": "Lightweight everyday sneaker with breathable mesh and cushioned sole.",
+    "featured": true
+  },
+  {
+    "id": "p-2",
+    "slug": "trail-explorer",
+    "name": "Trail Explorer",
+    "description": "Durable outdoor shoe designed for mixed terrain with reinforced toe.",
+    "featured": false
+  },
+  {
+    "id": "p-3",
+    "slug": "minimalist-leather-boot",
+    "name": "Minimalist Leather Boot",
+    "description": "Premium full-grain leather boot with clean lines and stitched sole.",
+    "featured": true
+  },
+  {
+    "id": "p-4",
+    "slug": "performance-sock",
+    "name": "Performance Sock",
+    "description": "Moisture-wicking breathable sock engineered for comfort.",
+    "featured": false
+  }
+]

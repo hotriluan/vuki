@@ -1,13 +1,29 @@
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import Script from 'next/script';
-import { findProductBySlug, findCategoryBySlug } from '@/lib/data';
+import { Suspense } from 'react';
+import { findProductBySlug, findCategoryBySlug, products } from '@/lib/data';
 import { Price } from '../../../components/Price';
 import AddToCartButton from './AddToCartButton';
 import { buildProductMetadata, buildProductJsonLd } from '@/lib/seo';
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { WishlistButton } from '@/components/WishlistButton';
 import { ProductImage } from '@/components/ProductImage';
+import { pushRecentlyViewed } from '@/lib/recentlyViewed';
+import { getAggregatedRating } from '@/lib/reviews';
+
+// Dynamic chunks: large or secondary UX blocks
+const ProductReviews = dynamic(() => import('@/components/ProductReviews').then(m => m.ProductReviews), {
+  loading: () => <div className="text-sm text-gray-500 py-10">Loading reviews...</div>,
+  ssr: false
+});
+const RelatedProducts = dynamic(() => import('@/components/RelatedProducts').then(m => m.RelatedProducts), {
+  loading: () => <div className="text-sm text-gray-500">Loading related...</div>
+});
+const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed').then(m => m.RecentlyViewed), {
+  loading: () => <div className="text-sm text-gray-500">Loading recently viewed...</div>,
+  ssr: false
+});
 
 interface Props { params: { slug: string }; }
 
@@ -19,11 +35,25 @@ export function generateMetadata({ params }: GenerateMetadataProps): Metadata {
   return buildProductMetadata(product) as Metadata;
 }
 
+export const revalidate = 3600; // 1h ISR for product pages
+
+export function generateStaticParams() {
+  return products.map(p => ({ slug: p.slug }));
+}
+
 export default function ProductPage({ params }: Props) {
   const product = findProductBySlug(params.slug);
   if (!product) return notFound();
   const image = product.images[0];
-  const jsonLd = buildProductJsonLd(product);
+  const agg = getAggregatedRating(product.id);
+  const jsonLd = {
+    ...buildProductJsonLd(product),
+    ...(agg ? { aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: agg.average.toFixed(1),
+      reviewCount: agg.count
+    }} : {})
+  } as any;
   const category = product.categoryIds?.length ? findCategoryBySlug(product.categoryIds[0]) : null;
   const breadcrumb = {
     '@context': 'https://schema.org',
@@ -49,8 +79,15 @@ export default function ProductPage({ params }: Props) {
       }
     ]
   };
+  // client effect to store recently viewed (guard for SSR)
+  if (typeof window !== 'undefined') {
+    // minimal defer using requestIdleCallback / fallback
+    const run = () => pushRecentlyViewed(product.id);
+    (window as any).requestIdleCallback ? (window as any).requestIdleCallback(run) : setTimeout(run, 0);
+  }
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 grid gap-10 md:grid-cols-2">
+    <div className="mx-auto max-w-6xl px-4 py-10 grid gap-10 md:grid-cols-2" data-page="product">
       <div>
         {image && (
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded border">
@@ -71,6 +108,17 @@ export default function ProductPage({ params }: Props) {
       </div>
       <Script id="ld-product" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Script id="ld-breadcrumb" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <div className="md:col-span-2 space-y-12">
+        <Suspense fallback={<div className="text-sm text-gray-500">Preparing reviews…</div>}>
+          <ProductReviews productId={product.id} />
+        </Suspense>
+        <Suspense fallback={<div className="text-sm text-gray-500">Preparing related…</div>}>
+          <RelatedProducts product={product} />
+        </Suspense>
+        <Suspense fallback={<div className="text-sm text-gray-500">Preparing recently viewed…</div>}>
+          <RecentlyViewed />
+        </Suspense>
+      </div>
     </div>
   );
 }

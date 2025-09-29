@@ -23,4 +23,15 @@ describe('seo helpers', () => {
     const jsonLd = buildProductJsonLd(sample as any);
     expect(jsonLd).toMatchSnapshot();
   });
+
+  it('product json-ld contains required schema fields', () => {
+    const jsonLd = buildProductJsonLd(sample as any) as any;
+    expect(jsonLd['@context']).toBe('https://schema.org');
+    expect(jsonLd['@type']).toBe('Product');
+    expect(jsonLd.name).toBe(sample.name);
+    expect(jsonLd.offers).toBeTruthy();
+    expect(jsonLd.offers['@type']).toBe('Offer');
+    expect(jsonLd.offers.priceCurrency).toBe('VND');
+    expect(typeof jsonLd.offers.price).toBe('number');
+  });
 });

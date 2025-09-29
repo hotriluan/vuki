@@ -24,3 +24,19 @@ export interface Product {
     stock?: number; // optional stock count for variant
   }>;
 }
+
+export interface Review {
+  id: string;
+  productId: string;
+  author: string;
+  rating: number; // 1-5
+  title?: string;
+  body: string;
+  createdAt: string; // ISO date
+}
+
+export interface AggregatedRating {
+  productId: string;
+  average: number;
+  count: number;
+}

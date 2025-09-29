@@ -2,7 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { @apply bg-white text-gray-900 antialiased; }
+html, body { @apply bg-white text-gray-900 antialiased transition-colors duration-300; }
+html.dark, .dark body { @apply bg-gray-950 text-gray-100; }
+
+/* Surface helpers */
+.surface { @apply bg-white dark:bg-gray-900; }
+.surface-muted { @apply bg-gray-50 dark:bg-gray-800; }
+.border-base { @apply border-gray-200 dark:border-gray-700; }
 
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: #f3f4f6; }
