@@ -8,6 +8,7 @@ import { WishlistProvider } from '../context/WishlistContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import { getSiteUrl, siteName, siteTagline } from '@/lib/seo';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { Instrumentation } from '@/components/Instrumentation';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,12 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} flex min-h-screen flex-col`}>
-        {/* Web Vitals init (client side). Dùng inline script nhỏ để tránh import trên server. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(()=>{if(typeof window==='undefined')return;window.addEventListener('load',()=>{import('/src/lib/webVitalsClient.js').then(m=>m.initWebVitals&&m.initWebVitals()).catch(()=>{});});})();`
-          }}
-        />
+        <Instrumentation />
         <ThemeProvider>
           <CurrencyProvider>
             <CartProvider>

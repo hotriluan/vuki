@@ -1,3 +1,4 @@
+import { colors as tokenColors } from './src/config/tokens.js';
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
@@ -9,12 +10,14 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#111827',
-          accent: '#d97706',
-          light: '#f3f4f6'
-        }
+          primary: tokenColors.brand.primary,
+          secondary: tokenColors.brand.secondary,
+          accent: tokenColors.brand.accent
+        },
+        gray: tokenColors.gray
       }
     }
   },
   plugins: []
 };
+import { colors as tokenColors } from './src/config/tokens.js';

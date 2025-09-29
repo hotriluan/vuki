@@ -423,6 +423,7 @@ APP_VERSION=0.1.1 BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) next build
 Khi flag bật (`NEXT_PUBLIC_FF_WEB_VITALS` khác '0'), client sẽ đăng ký `CLS, LCP, FID, INP, TTFB` qua `web-vitals` và POST tới `/api/analytics`.
 
 Mã nguồn:
+
 - Client init: `src/lib/webVitalsClient.ts`
 - Endpoint: `src/app/api/analytics/route.ts` (mock – chỉ `console.log` ở dev)
 
@@ -438,19 +439,20 @@ Triển khai thực tế có thể forward sang: Datadog, New Relic, Sentry Perf
 
 File: `src/config/features.ts`
 
-| Flag | Biến môi trường | Mặc định | Ghi chú |
-|------|-----------------|----------|--------|
-| enableRecentlyViewed | `NEXT_PUBLIC_FF_RECENTLY_VIEWED` | true | Tắt nếu = '0' |
-| enableRelatedProducts | `NEXT_PUBLIC_FF_RELATED` | true |  |
-| enableProductReviews | `NEXT_PUBLIC_FF_REVIEWS` | true |  |
-| enableSentry | `NEXT_PUBLIC_FF_SENTRY` | false | Bật nếu = '1' |
-| enableWebVitals | `NEXT_PUBLIC_FF_WEB_VITALS` | true | Tắt nếu = '0' |
+| Flag                  | Biến môi trường                  | Mặc định | Ghi chú       |
+| --------------------- | -------------------------------- | -------- | ------------- |
+| enableRecentlyViewed  | `NEXT_PUBLIC_FF_RECENTLY_VIEWED` | true     | Tắt nếu = '0' |
+| enableRelatedProducts | `NEXT_PUBLIC_FF_RELATED`         | true     |               |
+| enableProductReviews  | `NEXT_PUBLIC_FF_REVIEWS`         | true     |               |
+| enableSentry          | `NEXT_PUBLIC_FF_SENTRY`          | false    | Bật nếu = '1' |
+| enableWebVitals       | `NEXT_PUBLIC_FF_WEB_VITALS`      | true     | Tắt nếu = '0' |
 
 Helper: `isEnabled('enableWebVitals')`.
 
 ### Sentry (Skeleton – tùy chọn)
 
 Đã thêm các file:
+
 ```
 sentry.client.config.ts
 sentry.server.config.ts
@@ -464,6 +466,7 @@ NEXT_PUBLIC_FF_SENTRY=1 NEXT_PUBLIC_SENTRY_DSN=... SENTRY_DSN=... next build
 ```
 
 Sau đó mở rộng:
+
 ```ts
 // sentry.client.config.ts
 Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, tracesSampleRate: 0.2 });
@@ -471,9 +474,9 @@ Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, tracesSampleRate: 0.2 });
 
 ### Mở Rộng Quan Sát
 
-- Thêm tracing server (middleware đo thời gian render, ghi log JSON).  
-- Gửi vitals + errors tới một queue (Kafka / Redis Stream) để phân tích offline.  
-- Tự động so sánh bundle size (job preview-size hiện đã có) theo PR base branch.  
+- Thêm tracing server (middleware đo thời gian render, ghi log JSON).
+- Gửi vitals + errors tới một queue (Kafka / Redis Stream) để phân tích offline.
+- Tự động so sánh bundle size (job preview-size hiện đã có) theo PR base branch.
 - Alert nếu LCP > 2.5s hoặc INP > 200ms trung bình 5 mẫu đầu.
 
 ### Ghi chú bảo mật

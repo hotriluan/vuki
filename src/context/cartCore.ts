@@ -1,4 +1,5 @@
 import type { Product } from '@/lib/types';
+import { runPricingPipeline } from '@/domain/cart/pricingPipeline';
 
 export interface CartItem { productId: string; quantity: number; variantId?: string | null; }
 export interface AppliedCoupon { code: string; kind: 'percent' | 'fixed'; value: number; minSubtotal?: number; expiresAt?: string; }
@@ -92,13 +93,5 @@ export function computeShipping(subtotal: number, discount: number, baseFee: num
 }
 
 export function computeTotals(state: CartState, products: Product[], options?: { baseShipping?: number; vatEnabled?: boolean; vatRate?: number }): PricingTotals {
-  const subtotal = computeSubtotal(state.items, products);
-  const discountAmount = computeDiscount(subtotal, state.coupon);
-  const shippingFee = computeShipping(subtotal, discountAmount, options?.baseShipping ?? 30_000);
-  const baseForTax = Math.max(0, subtotal - discountAmount);
-  const vatEnabled = options?.vatEnabled ?? true;
-  const vatRate = options?.vatRate ?? 0.1; // 10%
-  const tax = vatEnabled ? Math.floor(baseForTax * vatRate) : 0;
-  const total = Math.max(0, baseForTax + shippingFee + tax);
-  return { subtotal, discountAmount, shippingFee, tax, total };
+  return runPricingPipeline(state, products, { baseShipping: options?.baseShipping, vatEnabled: options?.vatEnabled, vatRate: options?.vatRate });
 }

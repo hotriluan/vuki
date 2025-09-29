@@ -4,6 +4,7 @@ import { products } from '@/lib/data';
 import { Product } from '@/lib/types';
 import { cartReducer, COUPONS, type CartState, type AppliedCoupon, type CartItem } from './cartCore';
 import { computeTotals } from './cartCore';
+import { eventBus } from '@/lib/eventBus';
 import { getProvinceShippingBase } from '@/config/shipping';
 import { VAT_ENABLED, VAT_RATE } from '@/config/pricing';
 
@@ -108,11 +109,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = useMemo(() => state.items.reduce((sum, i) => sum + i.quantity, 0), [state.items]);
 
   // Compute totals directly from statically imported products (avoids dynamic require incompatibility under ESM)
-  const { subtotal, discountAmount, shippingFee, tax, total } = useMemo(() => {
+  const pricing = useMemo(() => {
     const province = state.checkout?.province;
     const base = getProvinceShippingBase(province);
     return computeTotals(state, products, { baseShipping: base, vatEnabled: vatEnabledState, vatRate: VAT_RATE });
   }, [state, vatEnabledState]);
+  const { subtotal, discountAmount, shippingFee, tax, total } = pricing;
+
+  // Emit event khi pricing thay đổi
+  useEffect(() => {
+    eventBus.emit('cart:updated', { totalItems, subtotal, discount: discountAmount, total });
+  }, [totalItems, subtotal, discountAmount, total]);
 
   const applyCoupon = useCallback((code: string) => {
     const upper = code.trim().toUpperCase();
