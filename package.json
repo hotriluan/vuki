@@ -1,0 +1,43 @@
+{
+  "name": "shoe-store-starter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "ci": "next lint && vitest run --coverage --run && next build",
+    "analyze": "cross-env ANALYZE=1 next build"
+  },
+  "dependencies": {
+    "clsx": "2.1.1",
+    "fuse.js": "7.0.0",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.4",
+    "@testing-library/jest-dom": "6.4.2",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "20.11.30",
+    "@types/react": "18.2.74",
+    "@types/react-dom": "18.2.24",
+    "@vitest/coverage-v8": "^3.2.4",
+    "autoprefixer": "10.4.19",
+    "cross-env": "^10.0.0",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+    "jsdom": "24.0.0",
+    "postcss": "8.4.38",
+    "prettier": "3.2.5",
+    "tailwindcss": "3.4.9",
+    "typescript": "5.4.5",
+    "vitest": "^3.2.4"
+  }
+}

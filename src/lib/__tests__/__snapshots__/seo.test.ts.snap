@@ -1,0 +1,21 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`seo helpers > buildProductJsonLd base shape snapshot 1`] = `
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "description": "Lightweight everyday sneaker with breathable mesh and cushioned sole.",
+  "image": [
+    "https://images.unsplash.com/photo-1519744792095-2f2205e87b6f?auto=format&fit=crop&w=800&q=60",
+  ],
+  "name": "Urban Runner White",
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/InStock",
+    "price": 1290000,
+    "priceCurrency": "VND",
+    "url": "http://localhost:3000/product/urban-runner-white",
+  },
+  "sku": "p-1",
+}
+`;
