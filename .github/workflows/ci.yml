@@ -63,11 +63,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          # Unique artifact name per Node version to avoid 409 conflicts
+          name: coverage-report-node${{ matrix.node }}
           path: coverage
 
       - name: Upload to Codecov
-        if: ${{ success() || failure() }}
+        # Only run once (Node 20) to reduce duplicate coverage uploads
+        if: matrix.node == 20 && (success() || failure())
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # nếu repo public có thể bỏ dòng này

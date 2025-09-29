@@ -5,11 +5,16 @@ import { features } from './src/config/features';
 export function initSentryClient() {
   if (!features.enableSentry) return;
   // Dynamic import để tránh bundle nếu tắt
-  import('@sentry/nextjs').then(Sentry => {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      tracesSampleRate: 0.1,
-      integrations: [],
-    });
+  // Optional dependency: suppress type resolution error if not installed.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - optional peer
+  import('@sentry/nextjs').then((Sentry: any) => {
+    try {
+      Sentry.init({
+        dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+        tracesSampleRate: 0.1,
+        integrations: [],
+      });
+    } catch {}
   }).catch(() => {});
 }

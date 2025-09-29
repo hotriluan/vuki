@@ -1,4 +1,4 @@
-import { colors as tokenColors } from './src/config/tokens.js';
+import { colors as tokenColors } from './src/config/tokens.cjs';
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
@@ -20,4 +20,3 @@ export default {
   },
   plugins: []
 };
-import { colors as tokenColors } from './src/config/tokens.js';
