@@ -15,7 +15,6 @@
     "analyze": "cross-env ANALYZE=1 next build"
   },
   "dependencies": {
-    "clsx": "2.1.1",
     "fuse.js": "7.0.0",
     "next": "14.2.5",
     "react": "18.3.1",
