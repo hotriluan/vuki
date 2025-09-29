@@ -37,6 +37,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} flex min-h-screen flex-col`}>
+        {/* Web Vitals init (client side). Dùng inline script nhỏ để tránh import trên server. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{if(typeof window==='undefined')return;window.addEventListener('load',()=>{import('/src/lib/webVitalsClient.js').then(m=>m.initWebVitals&&m.initWebVitals()).catch(()=>{});});})();`
+          }}
+        />
         <ThemeProvider>
           <CurrencyProvider>
             <CartProvider>

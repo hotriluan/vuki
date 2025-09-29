@@ -395,6 +395,92 @@ expect(totals.discountAmount).toBeGreaterThan(0);
 
 ## Coverage & CI (Đã cấu hình)
 
+## 9. Triển Khai & Quan Sát
+
+### Healthcheck
+
+Route: `GET /api/health`
+
+Trả về ví dụ:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "buildTime": "2025-09-29T12:34:56.000Z",
+  "timestamp": "2025-09-29T12:40:00.000Z"
+}
+```
+
+Bạn có thể set biến môi trường build (ví dụ trong CI):
+
+```bash
+APP_VERSION=0.1.1 BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) next build
+```
+
+### Web Vitals
+
+Khi flag bật (`NEXT_PUBLIC_FF_WEB_VITALS` khác '0'), client sẽ đăng ký `CLS, LCP, FID, INP, TTFB` qua `web-vitals` và POST tới `/api/analytics`.
+
+Mã nguồn:
+- Client init: `src/lib/webVitalsClient.ts`
+- Endpoint: `src/app/api/analytics/route.ts` (mock – chỉ `console.log` ở dev)
+
+Payload ví dụ:
+
+```json
+{ "metric": "LCP", "value": 1320.45, "id": "v2-1234", "label": "good" }
+```
+
+Triển khai thực tế có thể forward sang: Datadog, New Relic, Sentry Performance hoặc BigQuery.
+
+### Feature Flags
+
+File: `src/config/features.ts`
+
+| Flag | Biến môi trường | Mặc định | Ghi chú |
+|------|-----------------|----------|--------|
+| enableRecentlyViewed | `NEXT_PUBLIC_FF_RECENTLY_VIEWED` | true | Tắt nếu = '0' |
+| enableRelatedProducts | `NEXT_PUBLIC_FF_RELATED` | true |  |
+| enableProductReviews | `NEXT_PUBLIC_FF_REVIEWS` | true |  |
+| enableSentry | `NEXT_PUBLIC_FF_SENTRY` | false | Bật nếu = '1' |
+| enableWebVitals | `NEXT_PUBLIC_FF_WEB_VITALS` | true | Tắt nếu = '0' |
+
+Helper: `isEnabled('enableWebVitals')`.
+
+### Sentry (Skeleton – tùy chọn)
+
+Đã thêm các file:
+```
+sentry.client.config.ts
+sentry.server.config.ts
+```
+
+Chưa cài `@sentry/nextjs` để tránh tăng bundle khi chưa cần. Bật bằng cách:
+
+```bash
+npm install @sentry/nextjs
+NEXT_PUBLIC_FF_SENTRY=1 NEXT_PUBLIC_SENTRY_DSN=... SENTRY_DSN=... next build
+```
+
+Sau đó mở rộng:
+```ts
+// sentry.client.config.ts
+Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, tracesSampleRate: 0.2 });
+```
+
+### Mở Rộng Quan Sát
+
+- Thêm tracing server (middleware đo thời gian render, ghi log JSON).  
+- Gửi vitals + errors tới một queue (Kafka / Redis Stream) để phân tích offline.  
+- Tự động so sánh bundle size (job preview-size hiện đã có) theo PR base branch.  
+- Alert nếu LCP > 2.5s hoặc INP > 200ms trung bình 5 mẫu đầu.
+
+### Ghi chú bảo mật
+
+- Endpoint `/api/analytics` hiện không có auth – khi deploy sản phẩm thực tế nên thêm rate limit / secret key / turn off trên production nếu không dùng.
+- Không log PII trong web vitals.
+
 Badge (thay OWNER/REPO sau khi push):
 `![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)`
 
@@ -664,12 +750,14 @@ Các nâng cấp bổ sung gần đây:
 - Tests mới: PricingBreakdown render, i18n toggle đổi “Giỏ hàng” ↔ “Cart”, auto detect province, countdown coupon trong 24h, đảm bảo total vẫn tính đúng sau refactor.
 
 Lợi ích:
+
 1. Giảm lặp mã & chuẩn hoá layout pricing.
 2. Cải thiện UX (urgency countdown, auto province, thông báo rõ ràng đa ngôn ngữ cơ bản).
 3. Hiệu năng tốt hơn (debounce writes localStorage, countdown chỉ kích hoạt khi cần <24h & có expiresAt).
 4. Dễ mở rộng i18n (có thể tách dictionary JSON, thêm plural rules sau này).
 
 Hướng mở rộng tương lai:
+
 - Thêm full danh sách 63 tỉnh + fuzzy match.
 - Đồng bộ countdown hết hạn tự động gỡ coupon (thay vì chờ reload/apply lại).
 - Tooltips giải thích dòng thuế & phí ship trong PricingBreakdown.
@@ -678,20 +766,22 @@ Hướng mở rộng tương lai:
 
 ## 5. Performance & Bundle (Mới)
 
-| Hạng mục | Trạng thái | Chi tiết triển khai |
-|----------|-----------|----------------------|
-| Split code theo route chuyên sâu | ĐÃ LÀM | `ProductReviews`, `RelatedProducts`, `RecentlyViewed` chuyển sang `next/dynamic` với fallback, tách khỏi initial product bundle. Reviews & RecentlyViewed tắt SSR để tránh hydrate không cần thiết ban đầu. |
-| Prefetch/SSG sản phẩm & danh mục | ĐÃ LÀM | Export `generateStaticParams` + `revalidate` ở `app/product/[slug]` (3600s) và `app/category/[slug]` (1800s). Giúp ISR thay vì full SSR runtime. |
-| Edge middleware/API cache | ĐÃ LÀM (cơ bản) | Route `GET /api/products` (runtime edge) trả JSON sản phẩm kèm header `cache-control: public, s-maxage=300, stale-while-revalidate=3600`. Chuẩn bị nền tảng nếu chuyển dữ liệu sang fetch động. |
-| Thêm compression | GHI CHÚ | Vercel auto Brotli/Gzip. Nếu self-host: thêm Fastify `@fastify/compress` hoặc Nginx `gzip on; brotli_static on;`. Chưa cần code thay đổi. |
-| Lazy hydration secondary UI | ĐANG MỞ RỘNG | Suspense fallback nhẹ cho khối reviews/related/recently giúp FCP nhanh hơn. |
+| Hạng mục                         | Trạng thái      | Chi tiết triển khai                                                                                                                                                                                         |
+| -------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Split code theo route chuyên sâu | ĐÃ LÀM          | `ProductReviews`, `RelatedProducts`, `RecentlyViewed` chuyển sang `next/dynamic` với fallback, tách khỏi initial product bundle. Reviews & RecentlyViewed tắt SSR để tránh hydrate không cần thiết ban đầu. |
+| Prefetch/SSG sản phẩm & danh mục | ĐÃ LÀM          | Export `generateStaticParams` + `revalidate` ở `app/product/[slug]` (3600s) và `app/category/[slug]` (1800s). Giúp ISR thay vì full SSR runtime.                                                            |
+| Edge middleware/API cache        | ĐÃ LÀM (cơ bản) | Route `GET /api/products` (runtime edge) trả JSON sản phẩm kèm header `cache-control: public, s-maxage=300, stale-while-revalidate=3600`. Chuẩn bị nền tảng nếu chuyển dữ liệu sang fetch động.             |
+| Thêm compression                 | GHI CHÚ         | Vercel auto Brotli/Gzip. Nếu self-host: thêm Fastify `@fastify/compress` hoặc Nginx `gzip on; brotli_static on;`. Chưa cần code thay đổi.                                                                   |
+| Lazy hydration secondary UI      | ĐANG MỞ RỘNG    | Suspense fallback nhẹ cho khối reviews/related/recently giúp FCP nhanh hơn.                                                                                                                                 |
 
 ### Giải thích lựa chọn
+
 - Dynamic import giúp giảm thời gian TTFB + JS initial parse cho trang product: người dùng thấy ảnh + thông tin chính nhanh hơn, các block nặng (reviews) tải sau.
 - ISR (`revalidate`) giữ SEO ổn định nhưng vẫn có thể cập nhật dữ liệu mock trong tương lai mà không rebuild toàn site.
 - Edge API route tạo precedent: Khi chuyển data sang DB, có thể áp dụng cache tầng edge và stale-while-revalidate để làm tươi nền.
 
 ### Mở rộng tiềm năng tiếp theo
+
 1. Tạo `route segment config` bật `preferredRegion` (nếu Vercel) để kéo product page gần user.
 2. Dùng `next/headers` + `draftMode` cho preview không cache.
 3. Prefetch thông minh: sử dụng `onMouseEnter` prefetch dynamic chunk reviews khi user hover anchor tới section.
@@ -700,17 +790,23 @@ Hướng mở rộng tương lai:
 6. Kiểm tra tree-shaking: đảm bảo không import toàn bộ thư viện (Fuse.js đã chỉ import default tối ưu). Nếu thêm date lib → chọn `date-fns` thay moment.
 
 ### Kiểm tra sau tối ưu
+
 Chạy `ANALYZE=1 npm run build` và so sánh trước/sau:
+
 - Giảm kích thước bundle trang `/product/[slug]` (JS initial) do 3 block tách ra.
 - Time-to-interaction phần chính không chờ tải reviews.
 
 ### Self-host Compression Ghi chú
+
 Fastify server (pseudo):
+
 ```ts
 import compress from '@fastify/compress';
 app.register(compress, { global: true, encodings: ['br', 'gzip'] });
 ```
+
 Nginx snippet:
+
 ```nginx
 gzip on;
 gzip_types text/css application/javascript application/json image/svg+xml;
@@ -718,10 +814,12 @@ gzip_min_length 1024;
 ```
 
 ### Theo dõi
+
 - Thêm script Lighthouse CI để đo lường FCP/LCP sau khi tách dynamic.
 - Ghi lại baseline trong README (sẽ cập nhật khi có số liệu thực tế).
 
 ## 6. Search Nâng Cao (Mới)
+
 ## 7. Testing & Chất Lượng
 
 Mục tiêu nâng chuẩn chất lượng code:
@@ -736,38 +834,52 @@ Mục tiêu nâng chuẩn chất lượng code:
 ### Gợi ý mở rộng
 
 - Mutation Testing: Có thể tích hợp Stryker hoặc `vitest --mutation` (khi feature stable) để đo mutation score. Bước khởi đầu:
+
   1. Cài: `npm i -D @stryker-mutator/core @stryker-mutator/typescript-checker`.
   2. Tạo `stryker.conf.json` tối giản:
      ```json
-     { "mutate": ["src/**/*.{ts,tsx}"], "testRunner": "vitest", "coverageAnalysis": "off" }
+     {
+       "mutate": ["src/**/*.{ts,tsx}"],
+       "testRunner": "vitest",
+       "coverageAnalysis": "off"
+     }
      ```
   3. Chạy: `npx stryker run`.
   4. Thiết lập threshold (ví dụ) trong config: `"thresholds": { "high": 80, "low": 60, "break": 50 }`.
 
 - Tracer hiệu năng nâng cao: Bọc thêm `performance.mark()` quanh các đoạn build Fuse phức tạp, hoặc dùng Web Vitals khi lên production.
 
-
 Các cải tiến vừa bổ sung cho trải nghiệm tìm kiếm:
 
-| Hạng mục | Trạng thái | Ghi chú |
-|----------|-----------|---------|
-| Debounce input | ĐÃ CẬP NHẬT | Thời gian debounce tăng 150→220ms để giảm số lần xây results khi người gõ nhanh. |
-| Lazy load index JSON | ĐÃ LÀM | File `public/search-index.json` (chỉ trường nhỏ: id, slug, name, description, featured) fetch lần đầu mở modal. |
-| Loading state index | ĐÃ LÀM | Hiển thị “Đang tải index…” (animate-pulse) trước khi Fuse sẵn sàng. |
-| Fuzzy slug weight | ĐÃ LÀM | Tăng weight slug 0.1→0.20, threshold 0.38→0.42, distance 120 để tolerant sai chính tả / thiếu ký tự. |
-| No results fallback | ĐÃ LÀM | Thay “No results” bằng gợi ý top featured (tối đa 3) giúp giữ user trong flow. |
-| Externalize index | ĐÃ LÀM | Giúp tách data khỏi JS bundle; dễ chuyển sang prebuild/bulk fetch sau này. |
+| Hạng mục             | Trạng thái  | Ghi chú                                                                                                         |
+| -------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| Debounce input       | ĐÃ CẬP NHẬT | Thời gian debounce tăng 150→220ms để giảm số lần xây results khi người gõ nhanh.                                |
+| Lazy load index JSON | ĐÃ LÀM      | File `public/search-index.json` (chỉ trường nhỏ: id, slug, name, description, featured) fetch lần đầu mở modal. |
+| Loading state index  | ĐÃ LÀM      | Hiển thị “Đang tải index…” (animate-pulse) trước khi Fuse sẵn sàng.                                             |
+| Fuzzy slug weight    | ĐÃ LÀM      | Tăng weight slug 0.1→0.20, threshold 0.38→0.42, distance 120 để tolerant sai chính tả / thiếu ký tự.            |
+| No results fallback  | ĐÃ LÀM      | Thay “No results” bằng gợi ý top featured (tối đa 3) giúp giữ user trong flow.                                  |
+| Externalize index    | ĐÃ LÀM      | Giúp tách data khỏi JS bundle; dễ chuyển sang prebuild/bulk fetch sau này.                                      |
 
 ### Cấu trúc index
+
 `public/search-index.json` – ví dụ:
+
 ```json
 [
-  { "id": "p-1", "slug": "urban-runner-white", "name": "Urban Runner White", "description": "Lightweight everyday sneaker...", "featured": true }
+  {
+    "id": "p-1",
+    "slug": "urban-runner-white",
+    "name": "Urban Runner White",
+    "description": "Lightweight everyday sneaker...",
+    "featured": true
+  }
 ]
 ```
+
 Có thể regenerate bằng script build riêng (chưa thêm) khi sản phẩm động.
 
 ### Fuse config mới
+
 ```ts
 keys: [
   { name: 'name', weight: 0.55 },
@@ -781,15 +893,18 @@ includeMatches: true
 ```
 
 ### UI States mới
+
 1. Loading: Hiện khi index hoặc Fuse đang load lần đầu.
 2. No results: Render featured recommendations.
 3. Recent searches: Không đổi (xuất hiện khi query rỗng và có lịch sử).
 
 ### Test cập nhật
+
 - Điều chỉnh thời gian giả lập debounce 220ms.
 - Thêm test fallback: query “zzzzz” → nhận “No results – gợi ý nổi bật” + links.
 
 ### Hướng mở rộng tiếp
+
 1. Prefetch index khi người dùng focus vào input header (anticipatory fetch).
 2. Thêm scoring cho “featured” (boost) hoặc popularity count.
 3. Chunk index lớn (shard) nếu > vài nghìn sản phẩm.
@@ -798,6 +913,6 @@ includeMatches: true
 6. Fallback accent-insensitive matching (normalize dấu tiếng Việt). Hiện rely vào lowercase base.
 
 ### Tác động hiệu năng
+
 - Giảm kích thước bundle vì không bundle full `products` vào Fuse build client ban đầu.
 - Index fetch dùng `cache: force-cache` → browser có thể reuse cho các lần mở sau.
-
