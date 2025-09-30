@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci": "next lint && vitest run --coverage --run && next build",
-    "analyze": "cross-env ANALYZE=1 next build"
+    "analyze": "cross-env ANALYZE=1 next build",
+    "release": "semantic-release"
   },
   "dependencies": {
     "fuse.js": "7.0.0",
@@ -42,6 +43,10 @@
     "tailwindcss": "3.4.9",
     "typescript": "5.4.5",
     "vitest": "^3.2.4",
-    "zod": "3.23.8"
+    "zod": "3.23.8",
+    "semantic-release": "22.0.12",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/git": "10.0.1",
+    "@semantic-release/github": "9.2.6"
   }
 }
