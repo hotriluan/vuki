@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build-unified-search-index.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/build-unified-search-index.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

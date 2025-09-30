@@ -41,7 +41,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           setLoadingIndex(true);
           try { await ensureIndexLoad(); setIndexReady(true); } finally { setLoadingIndex(false); }
         }
-        const r = await searchProducts(q);
+  const r = await searchProducts(q);
         setResults(r);
         setActive(0);
         setRecent(prev => {
@@ -186,15 +186,15 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         {/* Focus start sentinel */}
         <button aria-hidden="true" tabIndex={0} className="sr-only focus:not-sr-only" onFocus={() => inputRef.current?.focus()} />
         <div className="flex items-center gap-2 border-b px-4" id="search-modal-header">
-          <h2 id="search-modal-title" className="sr-only">Product search dialog</h2>
-          <p id="search-modal-desc" className="sr-only">Type to search products. Use arrow keys to navigate results and Enter to open. Press Escape to close.</p>
+          <h2 id="search-modal-title" className="sr-only">Unified search dialog</h2>
+          <p id="search-modal-desc" className="sr-only">Type to search products and blog posts. Use arrow keys to navigate results and Enter to open. Press Escape to close.</p>
           <input
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search products... (Esc to close)"
+            placeholder="Search products & blog... (Esc to close)"
             className="w-full bg-transparent py-3 outline-none text-sm"
-            aria-label="Search products"
+            aria-label="Search products and blog"
           />
           {query && (
             <button
@@ -260,15 +260,20 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           )}
           {results.map((r, i) => (
             <Link
-              key={r.product.slug}
+              key={r.product.slug + (r.product as any).type}
               id={`search-result-${r.product.slug}`}
               role="option"
               aria-selected={i === active}
-              href={`/product/${r.product.slug}`}
+              href={(r.product as any).type === 'blog' ? `/blog/${r.product.slug}` : `/product/${r.product.slug}`}
               className={`flex flex-col gap-1 px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 outline-none ${i === active ? 'bg-gray-100' : ''}`}
               onClick={onClose}
             >
-              <span className="text-sm font-medium">{highlightParts(r, 'name')}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                  {(r.product as any).type === 'blog' ? 'Bài viết' : 'Sản phẩm'}
+                </span>
+                <span className="text-sm font-medium flex-1 truncate">{highlightParts(r, 'name')}</span>
+              </div>
               <span className="text-xs text-gray-600 line-clamp-2">{highlightParts(r, 'description')}</span>
             </Link>
           ))}

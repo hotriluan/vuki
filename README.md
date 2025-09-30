@@ -148,14 +148,14 @@ Tên file có thể prefixed bằng ngày để giúp quản lý, nhưng slug th
 
 ```yaml
 ---
-slug: giay-chay-bo-toi-uu          # bắt buộc – dùng làm route /blog/[slug]
-title: "Tối ưu hiệu suất chạy bộ với đôi giày phù hợp"  # bắt buộc
-excerpt: "Mô tả ngắn hiển thị ở trang list"             # khuyến nghị (SEO/meta)
+slug: giay-chay-bo-toi-uu # bắt buộc – dùng làm route /blog/[slug]
+title: 'Tối ưu hiệu suất chạy bộ với đôi giày phù hợp' # bắt buộc
+excerpt: 'Mô tả ngắn hiển thị ở trang list' # khuyến nghị (SEO/meta)
 cover: https://images.unsplash.com/... # optional – ảnh 16:9
-publishedAt: 2025-09-25T09:00:00.000Z  # ISO string (bắt buộc)
-author: "Admin"                        # optional
-tags: ["chay-bo","huong-dan"]       # optional – tối đa nên <6
-readingMinutes: 6                      # optional – có thể tự tính sau này
+publishedAt: 2025-09-25T09:00:00.000Z # ISO string (bắt buộc)
+author: 'Admin' # optional
+tags: ['chay-bo', 'huong-dan'] # optional – tối đa nên <6
+readingMinutes: 6 # optional – có thể tự tính sau này
 ---
 ```
 
@@ -163,13 +163,13 @@ readingMinutes: 6                      # optional – có thể tự tính sau n
 
 File: `src/lib/blog.ts`
 
-| Hàm | Mô tả |
-|-----|-------|
-| `getAllPosts()` | Trả về danh sách đã sort desc theo `publishedAt` (đã kèm `html`). |
-| `getPostBySlug(slug)` | Lấy 1 bài theo slug hoặc null. |
-| `getRecentPosts(limit)` | Trả về frontmatter rút gọn (không `html`). |
-| `generatePostParams()` | Dùng cho `generateStaticParams` (SSG). |
-| `estimateReadingMinutes(html)` | Ước tính thời gian đọc từ HTML (200 wpm). |
+| Hàm                            | Mô tả                                                             |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `getAllPosts()`                | Trả về danh sách đã sort desc theo `publishedAt` (đã kèm `html`). |
+| `getPostBySlug(slug)`          | Lấy 1 bài theo slug hoặc null.                                    |
+| `getRecentPosts(limit)`        | Trả về frontmatter rút gọn (không `html`).                        |
+| `generatePostParams()`         | Dùng cho `generateStaticParams` (SSG).                            |
+| `estimateReadingMinutes(html)` | Ước tính thời gian đọc từ HTML (200 wpm).                         |
 
 ### Routes
 
@@ -212,7 +212,6 @@ Test: `src/lib/__tests__/blog.test.ts` xác nhận:
 - Thêm `<meta name="robots" content="noindex" />` cho các bài `draft` nếu sau này hỗ trợ.
 
 ---
-
 
 ## Chạy dự án
 
