@@ -7,6 +7,14 @@
 
 Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Router) + TypeScript + Tailwind CSS.
 
+## Offline Fallback (PWA)
+
+- Đã chuyển sang dùng static `public/offline.html` làm fallback (service worker `next-pwa`).
+- Đã xoá hoàn toàn thư mục `app/` gốc tạm (shim) để tránh xung đột với `src/app`.
+- Nếu muốn tuỳ biến UI offline nâng cao, tạo component client riêng và build ra static HTML trước, hoặc dùng runtime hydrate trong `offline.html` (script inline nhỏ đọc cache).
+- Lưu ý: Không nên tạo lại `app/offline/page.tsx` trừ khi cũng có `app/layout.tsx`; cấu trúc chính thức: chỉ dùng `src/app`.
+
+
 ## Tính năng hiện tại
 
 - Layout cơ bản (Header, Footer)

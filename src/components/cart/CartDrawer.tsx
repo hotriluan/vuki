@@ -87,8 +87,9 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           {itemsDetailed.length === 0 && (
             <p className="text-sm text-gray-500">Chưa có sản phẩm nào.</p>
           )}
-          {itemsDetailed.map(({ product, quantity, unitPrice, lineTotal, variantId, variantLabel }) => (
-            <div key={product.id + (variantId || '')} className="flex gap-3">
+          {itemsDetailed.map(({ product, quantity, unitPrice, lineTotal, variantId, variantLabel }, idx) => (
+            // Key includes variant + index to avoid potential duplicate id collisions (warning observed in tests for p-1)
+            <div key={`${product.id}${variantId ? '-' + variantId : ''}-${idx}`} className="flex gap-3">
               <div className="relative w-16 h-20 rounded bg-gray-100 overflow-hidden flex-shrink-0">
                 {product.images[0] && (
                   <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="64px" />

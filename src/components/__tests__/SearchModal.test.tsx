@@ -57,13 +57,13 @@ afterEach(() => {
 });
 
 describe('SearchModal', () => {
-  it('shows helper message when query < 2 chars', () => {
-    renderModal(true);
+  it('shows helper message when query < 2 chars', async () => {
+    await act(async () => { renderModal(true); });
     expect(screen.getByText(/Type at least 2 characters/i)).toBeInTheDocument();
   });
 
   it('performs search and renders results with highlight marks', async () => {
-    renderModal(true);
+    await act(async () => { renderModal(true); });
     const input = screen.getByLabelText(/Search products/i) as HTMLInputElement;
   await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(230); });
     // Two results
@@ -75,7 +75,7 @@ describe('SearchModal', () => {
   });
 
   it('stores recent searches and displays them when cleared', async () => {
-    renderModal(true);
+    await act(async () => { renderModal(true); });
     const input = screen.getByLabelText(/Search products/i) as HTMLInputElement;
   await act(async () => { fireEvent.change(input, { target: { value: 'urban' } }); vi.advanceTimersByTime(240); });
     // Ensure debounce callback executed and state committed
@@ -97,7 +97,7 @@ describe('SearchModal', () => {
     const locationMock: any = { ...window.location };
     Object.defineProperty(window, 'location', { value: locationMock, writable: true });
 
-    renderModal(true, onClose);
+  await act(async () => { renderModal(true, onClose); });
     const input = screen.getByLabelText(/Search products/i) as HTMLInputElement;
   await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(240); });
     const listbox = screen.getByRole('listbox');
@@ -128,7 +128,7 @@ describe('SearchModal', () => {
 
   it('Home and End keys jump to first and last options', async () => {
     const onClose = vi.fn();
-    renderModal(true, onClose);
+  await act(async () => { renderModal(true, onClose); });
     const input = screen.getByLabelText(/Search products/i) as HTMLInputElement;
     await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(240); });
     const listbox = screen.getByRole('listbox');
@@ -143,7 +143,7 @@ describe('SearchModal', () => {
   });
 
   it('highlights contain expected mark tags around search term', async () => {
-    renderModal(true);
+  await act(async () => { renderModal(true); });
     const input = screen.getByLabelText(/Search products/i) as HTMLInputElement;
     await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(240); });
     const firstOption = screen.getAllByRole('option')[0];
@@ -162,7 +162,7 @@ describe('SearchModal', () => {
     btn.focus();
     expect(document.activeElement).toBe(btn);
 
-    renderModal(true, onClose);
+  await act(async () => { renderModal(true, onClose); });
     const input = screen.getByLabelText(/Search products/i);
   await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(240); });
     // Press Escape on listbox container level
@@ -175,7 +175,7 @@ describe('SearchModal', () => {
 
   it('ArrowUp on first item wraps to last', async () => {
     const onClose = vi.fn();
-    renderModal(true, onClose);
+  await act(async () => { renderModal(true, onClose); });
     const input = screen.getByLabelText(/Search products/i);
     await act(async () => { fireEvent.change(input, { target: { value: 'ur' } }); vi.advanceTimersByTime(240); });
     const listbox = screen.getByRole('listbox');
@@ -188,7 +188,7 @@ describe('SearchModal', () => {
   it('shows loading index then no-results fallback with featured suggestions', async () => {
     // Force empty result scenario
     searchSpy.mockResolvedValueOnce([] as any);
-    renderModal(true);
+  await act(async () => { renderModal(true); });
     const input = screen.getByLabelText(/Search products/i);
     await act(async () => { fireEvent.change(input, { target: { value: 'zzzzz' } }); });
     // During debounce time we move timers forward incrementally

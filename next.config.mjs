@@ -9,8 +9,8 @@ const withPWA = withPWAOrig({
   register: true,
   skipWaiting: true,
   fallbacks: {
-    // We will create an offline page for generic navigation fallback
-    document: '/offline'
+    // Use static fallback HTML to avoid App Router build issue with dynamic page
+    document: '/offline.html'
   }
 });
 
