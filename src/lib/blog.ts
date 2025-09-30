@@ -5,7 +5,11 @@ import { marked } from 'marked';
 let _fs: typeof import('fs') | null = null;
 let _path: typeof import('path') | null = null;
 function ensureNodeDeps() {
-  if (typeof window !== 'undefined') return false;
+  // Trong môi trường test (Vitest) dù dùng jsdom vẫn cần đọc markdown.
+  const isTest = typeof process !== 'undefined' && (
+    !!(process as any).env?.VITEST_WORKER_ID || (process as any).env?.NODE_ENV === 'test'
+  );
+  if (typeof window !== 'undefined' && !isTest) return false; // client thực sự
   if (_fs && _path) return true;
   try {
     const req = (0, eval)('require');

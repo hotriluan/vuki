@@ -51,6 +51,7 @@ async function buildInMemoryIndex(): Promise<UnifiedIndexItem[]> {
     } catch (e) {
       // blog optional
     }
+    // Nếu vẫn rỗng, không block index – vẫn trả product records.
     const productRecords: UnifiedIndexItem[] = products.map((p: any) => ({
       id: p.id,
       type: 'product',

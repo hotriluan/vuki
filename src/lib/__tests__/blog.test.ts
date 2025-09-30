@@ -11,6 +11,11 @@ describe('blog utilities', () => {
       // Thử lại một lần phòng timing (fs load chậm CI)
       posts = getAllPosts();
     }
+    // Nếu vẫn 0 thì log hỗ trợ chẩn đoán (sẽ không fail ở đây mà để assert)
+    if (posts.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn('[test][blog] posts still empty after retry');
+    }
   });
 
   it('should load posts >= 4 và sort theo publishedAt desc', () => {
@@ -20,6 +25,11 @@ describe('blog utilities', () => {
     }
   });
   it('getPostBySlug trả về đúng nội dung', () => {
+    if (posts.length === 0) {
+      // attempt lazy reload cuối cùng (phòng khi beforeAll chạy quá sớm)
+      posts = getAllPosts();
+    }
+    expect(posts.length).toBeGreaterThan(0);
     const one = posts[0];
     const by = getPostBySlug(one.slug);
     expect(by?.title).toBe(one.title);
