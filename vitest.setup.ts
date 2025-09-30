@@ -7,3 +7,18 @@ vi.mock('next/link', () => ({
 	__esModule: true,
 	default: ({ href, children, ...rest }: any) => React.createElement('a', { href: typeof href === 'string' ? href : '#', ...rest }, children)
 }));
+
+// Mock matchMedia for ThemeContext tests
+if (typeof window !== 'undefined' && !window.matchMedia) {
+	// @ts-ignore
+	window.matchMedia = (query: string) => ({
+		matches: query.includes('dark') ? false : false,
+		media: query,
+		onchange: null,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		addListener: () => {}, // legacy
+		removeListener: () => {}, // legacy
+		dispatchEvent: () => false
+	});
+}
