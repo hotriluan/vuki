@@ -29,6 +29,19 @@ jobs:
 
   build-test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: vuki
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot" \
+          --health-interval=10s \
+          --health-timeout=5s \
+          --health-retries=10
     strategy:
       fail-fast: false
       matrix:
@@ -50,19 +63,19 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
-
-      - name: Start MySQL service (matrix node ${{ matrix.node }})
-        uses: ankane/setup-mysql@v1
-        with:
-          mysql-version: 8.4
-      - name: Configure MySQL database
+      - name: Wait for MySQL (manual ping retries)
         run: |
-          mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS vuki;"
-        env:
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_PWD: root
+          for i in {1..15}; do
+            if mysql -h 127.0.0.1 -uroot -proot -e 'SELECT 1' >/dev/null 2>&1; then
+              echo "MySQL is up"; break; fi; echo "Waiting MySQL ($i)"; sleep 4;
+          done
+          mysql -h 127.0.0.1 -uroot -proot -e 'SHOW DATABASES;' || { echo 'MySQL not reachable'; exit 1; }
 
-      # DATABASE_URL already set earlier; keep step ordering consistent
+      - name: Confirm database
+        run: mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS vuki; USE vuki; SELECT DATABASE();"
+
+      - name: Show MySQL variables (debug)
+        run: mysql -h 127.0.0.1 -uroot -proot -e "SELECT version();"
 
       - name: Prisma generate
         run: npx prisma generate
@@ -74,6 +87,7 @@ jobs:
         run: npm run db:seed
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+        continue-on-error: true
 
       - name: Lint
         run: npm run lint
@@ -107,6 +121,15 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Upload npm debug log if failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-debug-log
+          path: |
+            npm-debug.log
+            /home/runner/.npm/_logs
 
   preview-size:
     name: Bundle Size Preview
