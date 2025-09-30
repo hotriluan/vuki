@@ -28,7 +28,6 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   useEffect(() => {
     if (!open) return;
     const q = query.trim();
-    // If query too short → clear
     if (q.length < 2) {
       window.clearTimeout(debounceRef.current);
       if (results.length) setResults([]);
@@ -51,24 +50,22 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           return next;
         });
       })();
-    }, 220); // slightly longer debounce to reduce fetch churn
+    }, 220);
     return () => window.clearTimeout(debounceRef.current);
-  }, [query, open, indexReady]);
+  }, [query, open, indexReady, results.length]);
 
-  // Load recent at mount/open
+  // Load recent when opened
   useEffect(() => {
-    if (open) {
-      try {
-        const raw = localStorage.getItem('recent-searches');
-        if (raw) {
-          const arr = JSON.parse(raw);
-            if (Array.isArray(arr)) setRecent(arr.filter((x: any) => typeof x === 'string'));
-        }
-      } catch {}
-    }
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem('recent-searches');
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) setRecent(arr.filter((x: any) => typeof x === 'string'));
+    } catch {}
   }, [open]);
 
-  // Handle open/close with animation mount control
+  // Handle open/close with animation + restore focus
   useEffect(() => {
     if (open) {
       window.clearTimeout(closeTimeoutRef.current);
@@ -76,16 +73,16 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       prevFocus.current = document.activeElement as HTMLElement;
       requestAnimationFrame(() => inputRef.current?.focus());
     } else {
-      // Delay unmount for animation
       closeTimeoutRef.current = window.setTimeout(() => {
         setVisible(false);
         setQuery('');
         setResults([]);
         prevFocus.current?.focus();
-      }, 140); // match animation duration
+      }, 140);
     }
   }, [open]);
 
+  // Core keyboard navigation handler (arrows, enter, escape)
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -126,6 +123,30 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     }
   }, [results, active, onClose]);
 
+  // Extended key handler to trap Tab focus inside modal
+  const extendedKeyHandler = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      const focusable = containerRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable && focusable.length) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+          return;
+        }
+        if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+          return;
+        }
+      }
+    }
+    onKeyDown(e);
+  }, [onKeyDown]);
+
   // Basic focus trap
   useEffect(() => {
     if (!open) return;
@@ -154,13 +175,19 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       className={`fixed inset-0 z-50 flex items-start justify-center p-4 transition-opacity duration-150 ${open ? 'opacity-100' : 'opacity-0'} bg-black/40 backdrop-blur-sm`}
       role="dialog"
       aria-modal="true"
-      onKeyDown={onKeyDown}
+      aria-labelledby="search-modal-title"
+      aria-describedby="search-modal-desc"
+      onKeyDown={extendedKeyHandler}
     >
       <div
         ref={containerRef}
         className={`w-full max-w-xl rounded-lg bg-white shadow-xl ring-1 ring-black/10 overflow-hidden flex flex-col transform transition-all duration-150 ${open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
       >
-        <div className="flex items-center gap-2 border-b px-4">
+        {/* Focus start sentinel */}
+        <button aria-hidden="true" tabIndex={0} className="sr-only focus:not-sr-only" onFocus={() => inputRef.current?.focus()} />
+        <div className="flex items-center gap-2 border-b px-4" id="search-modal-header">
+          <h2 id="search-modal-title" className="sr-only">Product search dialog</h2>
+          <p id="search-modal-desc" className="sr-only">Type to search products. Use arrow keys to navigate results and Enter to open. Press Escape to close.</p>
           <input
             ref={inputRef}
             value={query}
@@ -249,10 +276,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             <div className="p-4 text-xs text-gray-500">Type at least 2 characters to search</div>
           )}
         </div>
-        <div className="border-t bg-gray-50 px-4 py-2 flex justify-between text-[11px] text-gray-500">
+        <div className="border-t bg-gray-50 px-4 py-2 flex justify-between text-[11px] text-gray-500" aria-hidden="true">
           <span>/ to focus</span>
           <span>Esc to close • ↑ ↓ navigate • Enter open</span>
         </div>
+        {/* Focus end sentinel */}
+        <button aria-hidden="true" tabIndex={0} className="sr-only focus:not-sr-only" onFocus={() => inputRef.current?.focus()} />
       </div>
     </div>
   );

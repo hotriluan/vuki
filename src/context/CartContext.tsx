@@ -50,6 +50,7 @@ const CartContext = createContext<{
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], coupon: null, checkout: { name: '', email: '', address: '', province: '' } });
   const [vatEnabledState, setVatEnabled] = useState<boolean>(VAT_ENABLED);
+  const [lastAdded, setLastAdded] = useState<string | null>(null); // for aria-live announcements
   const HYDRATED_KEY = 'cart:v1';
   const hydratedRef = useRef(false);
 
@@ -160,6 +161,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
         }
         dispatch({ type: 'ADD', productId: product.id, quantity: qty, variantId });
+        // Set announcement message (product name + optional variant) – screen readers will pick it up
+        try {
+          const variant = product.variants?.find(v => v.id === variantId);
+          const vLabel = variant ? ` – ${variant.label}` : '';
+          setLastAdded(`${product.name}${vLabel} added to cart`);
+          // Clear message shortly after so repeated adds announce again
+          setTimeout(() => setLastAdded(null), 1500);
+        } catch {}
       },
       remove: (productId: string) => dispatch({ type: 'REMOVE', productId }),
       setQty: (productId: string, quantity: number) => dispatch({ type: 'SET_QTY', productId, quantity }),
@@ -179,7 +188,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }),
     [state, totalItems, shippingFee, discountAmount, subtotal, total, tax, vatEnabledState, isCheckoutReady, applyCoupon, removeCoupon, setCheckout]
   );
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      {/* Visually hidden polite live region for add-to-cart announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only" data-testid="cart-live-region">
+        {lastAdded}
+      </div>
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {
