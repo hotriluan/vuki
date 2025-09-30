@@ -15,6 +15,8 @@ async function main() {
   }
 
   for (const p of seedProducts) {
+    // Compute product-level stock: sum variant stock if variants exist else 0 (or fallback 50?)
+    const productLevelStock = p.variants?.length ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0;
     const created = await prisma.product.upsert({
       where: { slug: p.slug },
       update: {
@@ -24,6 +26,7 @@ async function main() {
         salePrice: p.salePrice ?? null,
         featured: !!p.featured,
         images: p.images,
+        stock: productLevelStock,
       },
       create: {
         slug: p.slug,
@@ -33,6 +36,7 @@ async function main() {
         salePrice: p.salePrice ?? null,
         featured: !!p.featured,
         images: p.images,
+        stock: productLevelStock,
       }
     });
 

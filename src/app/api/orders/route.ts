@@ -54,6 +54,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Variant mismatch' }, { status: 400 });
       }
       if (variant.priceDiff) base += variant.priceDiff;
+      // Stock check for variant
+      if (variant.stock < it.quantity) {
+        return NextResponse.json({ error: 'Insufficient variant stock', variantId: it.variantId }, { status: 400 });
+      }
+    }
+    // Product-level stock check only when no variant used
+    if (!it.variantId) {
+      if (typeof product.stock === 'number' && product.stock < it.quantity) {
+        return NextResponse.json({ error: 'Insufficient product stock', productId: product.id }, { status: 400 });
+      }
     }
     const lineTotal = base * it.quantity;
     total += lineTotal;
@@ -68,7 +78,21 @@ export async function POST(req: Request) {
   const userId = getUserId(req); // optional for now
 
   try {
-    const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx: any) => {
+      // Decrement stocks first
+      for (const it of clean) {
+        if (it.variantId) {
+          await tx.productVariant.update({
+            where: { id: it.variantId },
+            data: { stock: { decrement: it.quantity } }
+          });
+        } else {
+          await tx.product.update({
+            where: { id: it.productId },
+            data: { stock: { decrement: it.quantity } }
+          });
+        }
+      }
       const order = await tx.order.create({ data: { total, userId: userId || undefined } });
       await tx.orderItem.createMany({ data: orderItemsData.map(oi => ({ ...oi, orderId: order.id })) });
       return order;
