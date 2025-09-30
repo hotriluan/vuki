@@ -5,11 +5,11 @@ import { marked } from 'marked';
 let _fs: typeof import('fs') | null = null;
 let _path: typeof import('path') | null = null;
 function ensureNodeDeps() {
-  // Trong môi trường test (Vitest) dù dùng jsdom vẫn cần đọc markdown.
-  const isTest = typeof process !== 'undefined' && (
-    !!(process as any).env?.VITEST_WORKER_ID || (process as any).env?.NODE_ENV === 'test'
-  );
-  if (typeof window !== 'undefined' && !isTest) return false; // client thực sự
+  // Nhận diện runtime Node (kể cả jsdom test có window).
+  const isNodeLike = typeof process !== 'undefined' && !!(process as any).versions?.node;
+  const env = (process as any)?.env || {};
+  const isTest = !!env.VITEST || !!env.VITEST_WORKER_ID || env.NODE_ENV === 'test';
+  if (!isNodeLike && typeof window !== 'undefined' && !isTest) return false;
   if (_fs && _path) return true;
   try {
     const req = (0, eval)('require');
@@ -38,7 +38,20 @@ export interface PostData extends PostFrontMatter {
 
 function getPostsDir() {
   if (!ensureNodeDeps()) return '';
-  return _path!.join(process.cwd(), 'content', 'posts');
+  const envDir = (process as any)?.env?.BLOG_POSTS_DIR;
+  const candidates: string[] = [];
+  if (envDir) candidates.push(envDir);
+  const cwd = process.cwd();
+  candidates.push(
+    _path!.join(cwd, 'content', 'posts'),
+    _path!.join(cwd, '..', 'content', 'posts'),
+    _path!.join(cwd, '..', '..', 'content', 'posts')
+  );
+  // Tránh duyệt quá sâu – đủ cho CI cases.
+  for (const c of candidates) {
+    try { if (c && _fs?.existsSync(c)) return c; } catch { /* ignore */ }
+  }
+  return _path!.join(cwd, 'content', 'posts'); // fallback gốc
 }
 
 function readAllFilenames(): string[] {
