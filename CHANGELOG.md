@@ -4,6 +4,7 @@
 ### Features
 
 * **hero:** add accessible homepage hero slider with autoplay and tests ([8f0dc72](https://github.com/hotriluan/vuki/commit/8f0dc72a0de27382d1ef20c73739abab0fa81664))
+* **blog:** add markdown blog section (listing, detail pages, metadata, JSON-LD, tests, docs) ([1583fef](https://github.com/hotriluan/vuki/commit/1583fef))
 
 # Changelog
 

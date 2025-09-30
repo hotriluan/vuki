@@ -19,16 +19,17 @@ Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Rout
 
 Tự động hoá bằng **semantic-release**.
 
-| Thành phần | Mô tả |
-|------------|------|
-| Nhánh stable | `main` (phát hành bản thường) |
-| Nhánh prerelease | `alpha` (gắn hậu tố `-alpha.N`) |
-| File cấu hình | `.releaserc.json` |
-| Changelog | `CHANGELOG.md` (plugin `@semantic-release/changelog`) |
-| GitHub Release | Tạo tự động kèm ghi chú phiên bản |
+| Thành phần              | Mô tả                                                                       |
+| ----------------------- | --------------------------------------------------------------------------- |
+| Nhánh stable            | `main` (phát hành bản thường)                                               |
+| Nhánh prerelease        | `alpha` (gắn hậu tố `-alpha.N`)                                             |
+| File cấu hình           | `.releaserc.json`                                                           |
+| Changelog               | `CHANGELOG.md` (plugin `@semantic-release/changelog`)                       |
+| GitHub Release          | Tạo tự động kèm ghi chú phiên bản                                           |
 | Commit bump + changelog | Plugin `@semantic-release/git` (message: `chore(release): x.y.z [skip ci]`) |
 
 ### Quy tắc commit (Conventional Commits)
+
 ```
 feat(cart): add multi-currency toggle
 fix(search): debounce racing condition
@@ -40,6 +41,7 @@ test(cart): add coupon edge cases
 ```
 
 BREAKING CHANGE:
+
 ```
 feat!: change cart state shape
 
@@ -48,27 +50,32 @@ BREAKING CHANGE: cart items now store variant as object instead of id
 ```
 
 ### Mapping commit → version
-| Kiểu | Ảnh hưởng | Ví dụ bump (giả sử đang 0.1.0) |
-|------|-----------|---------------------------------|
-| fix  | patch     | 0.1.1 |
-| feat | minor     | 0.2.0 |
-| feat! / BREAKING CHANGE | major | 1.0.0 (khi đã >=1.x) |
+
+| Kiểu                    | Ảnh hưởng | Ví dụ bump (giả sử đang 0.1.0) |
+| ----------------------- | --------- | ------------------------------ |
+| fix                     | patch     | 0.1.1                          |
+| feat                    | minor     | 0.2.0                          |
+| feat! / BREAKING CHANGE | major     | 1.0.0 (khi đã >=1.x)           |
 
 Trong giai đoạn 0.x semantic-release vẫn tuân thủ logic semver—`feat` vẫn tạo bump minor (0.1.0 → 0.2.0).
 
 ### Prerelease flow
+
 1. Tạo nhánh / cập nhật nhánh `alpha` từ `main`.
 2. Push commit conventional (ví dụ `feat:`) → semantic-release sinh `0.2.0-alpha.1`.
 3. Thêm commit fix → `0.2.0-alpha.2`.
 4. Khi merge sang `main`, bản stable kế tiếp phát hành (0.2.0).
 
 ### Dry-run cục bộ (chỉ để xem dự đoán)
+
 ```bash
 npx semantic-release --dry-run
 ```
 
 ### Thực thi CI
+
 Workflow: `.github/workflows/release.yml` chạy trên push vào `main` hoặc `alpha`:
+
 1. Checkout (fetch-depth: 0)
 2. Install (npm ci)
 3. Test (Vitest)
@@ -76,13 +83,14 @@ Workflow: `.github/workflows/release.yml` chạy trên push vào `main` hoặc `
 5. `npm run release`
 
 ### Tag baseline
+
 Đã tạo thủ công: `v0.1.0`. Commits mới conventional sau tag sẽ kích hoạt bump tự động.
 
 ### Ghi chú
+
 - Không tự chỉnh `version` trong `package.json` thủ công—semantic-release quản lý.
 - Dùng `[skip ci]` chỉ khi commit thuần generated (semantic-release đã tự thêm).
 - Nếu cần bỏ qua phát hành cho một commit: dùng prefix khác ngoài các loại chuẩn (ví dụ `chore(local): ...`).
-
 
 ## Tính năng hiện tại
 
@@ -118,6 +126,93 @@ Workflow: `.github/workflows/release.yml` chạy trên push vào `main` hoặc `
 - User-submitted reviews (client merge, localStorage)
 - Category page Breadcrumb JSON-LD (Home → Category)
 - Size filter hiển thị cả size hết hàng (disabled + stock count)
+
+## Blog (Markdown)
+
+Module blog sử dụng file markdown đặt trong thư mục `content/posts`. Mỗi file chứa **frontmatter** ở đầu + nội dung markdown. Build time: đọc, parse bằng `gray-matter` + render HTML với `marked`. Dữ liệu được cache nhẹ trong process để tránh đọc đĩa nhiều lần.
+
+### Cấu trúc thư mục
+
+```
+content/
+  posts/
+    2025-09-giay-chay-bo-toi-uu.md
+    2025-08-cach-chon-size-chuan.md
+    2025-07-bao-quan-giay-sneaker.md
+    2025-06-xu-huong-mau-sac-2025.md
+```
+
+Tên file có thể prefixed bằng ngày để giúp quản lý, nhưng slug thực tế lấy từ frontmatter `slug`.
+
+### Frontmatter chuẩn
+
+```yaml
+---
+slug: giay-chay-bo-toi-uu          # bắt buộc – dùng làm route /blog/[slug]
+title: "Tối ưu hiệu suất chạy bộ với đôi giày phù hợp"  # bắt buộc
+excerpt: "Mô tả ngắn hiển thị ở trang list"             # khuyến nghị (SEO/meta)
+cover: https://images.unsplash.com/... # optional – ảnh 16:9
+publishedAt: 2025-09-25T09:00:00.000Z  # ISO string (bắt buộc)
+author: "Admin"                        # optional
+tags: ["chay-bo","huong-dan"]       # optional – tối đa nên <6
+readingMinutes: 6                      # optional – có thể tự tính sau này
+---
+```
+
+### APIs nội bộ
+
+File: `src/lib/blog.ts`
+
+| Hàm | Mô tả |
+|-----|-------|
+| `getAllPosts()` | Trả về danh sách đã sort desc theo `publishedAt` (đã kèm `html`). |
+| `getPostBySlug(slug)` | Lấy 1 bài theo slug hoặc null. |
+| `getRecentPosts(limit)` | Trả về frontmatter rút gọn (không `html`). |
+| `generatePostParams()` | Dùng cho `generateStaticParams` (SSG). |
+| `estimateReadingMinutes(html)` | Ước tính thời gian đọc từ HTML (200 wpm). |
+
+### Routes
+
+- Trang list: `/blog` – static revalidate mỗi 10 phút (`revalidate = 600`).
+- Trang chi tiết: `/blog/[slug]` – SSG + ISR 10 phút + metadata (OpenGraph/Twitter) + JSON-LD Article.
+
+### Structured Data
+
+`/blog/[slug]` inject `<script type="application/ld+json">` với schema `Article` (headline, datePublished, dateModified, image, keywords, author nếu có).
+
+### Cách thêm bài viết mới
+
+1. Tạo file mới `content/posts/YYYY-MM-ten-bai.md`.
+2. Khai báo frontmatter chuẩn (ít nhất: slug, title, publishedAt; optionally excerpt, cover, tags).
+3. Commit & push → Next.js build sẽ pick up và trang `/blog` cùng các route chi tiết sinh lại sau chu kỳ ISR.
+
+### Kiểm thử
+
+Test: `src/lib/__tests__/blog.test.ts` xác nhận:
+
+- Có >= 4 bài
+- Sort đúng thứ tự thời gian desc
+- Nội dung parse có thẻ heading (`<h2>`)
+
+### Mở rộng tương lai đề xuất
+
+- Pagination (ví dụ mỗi trang 10 bài → dynamic segment `page/[n]`).
+- Lọc theo tag `/blog/tag/[tag]` (filter dữ liệu từ `getAllPosts()`).
+- Tự động tính `readingMinutes` nếu thiếu (ước tính từ HTML sau parse) → bỏ trường trong frontmatter.
+- RSS feed `/feed.xml` (dùng `xmlbuilder2` hoặc template string). Revalidate song song với list.
+- Tạo `search-index-blog.json` gộp (title, excerpt, tags) để hợp nhất search sản phẩm + bài viết.
+- Highlight code block: tích hợp `shiki` (SSR) hoặc `rehype-prism-plus` (remark pipeline) – cân nhắc bundle.
+- Draft mode: thêm trường `draft: true` → exclude khỏi production list, chỉ hiển thị khi bật draft (`draftMode().enable()`).
+
+### Lưu ý hiệu năng & SEO
+
+- Số bài ít: đọc file sync build time đơn giản (chưa cần pipeline remark phức tạp).
+- Khi > ~200 bài: xem xét build pre-index JSON (cache) để giảm parse lặp; hoặc chuyển sang headless CMS.
+- Ảnh cover dùng Unsplash: đảm bảo thêm `?w=1600&q=80&auto=format` để tối ưu.
+- Thêm `<meta name="robots" content="noindex" />` cho các bài `draft` nếu sau này hỗ trợ.
+
+---
+
 
 ## Chạy dự án
 
