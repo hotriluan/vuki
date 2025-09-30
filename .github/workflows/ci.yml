@@ -43,8 +43,13 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'npm'
 
+      - name: Prepare environment vars
+        run: |
+          echo "PRISMA_SKIP_POSTINSTALL_GENERATE=1" >> $GITHUB_ENV
+          echo "DATABASE_URL=mysql://root:root@127.0.0.1:3306/vuki" >> $GITHUB_ENV
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Start MySQL service (matrix node ${{ matrix.node }})
         uses: ankane/setup-mysql@v1
@@ -57,8 +62,7 @@ jobs:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PWD: root
 
-      - name: Set up DATABASE_URL env
-        run: echo "DATABASE_URL=mysql://root:root@127.0.0.1:3306/vuki" >> $GITHUB_ENV
+      # DATABASE_URL already set earlier; keep step ordering consistent
 
       - name: Prisma generate
         run: npx prisma generate
