@@ -1,5 +1,7 @@
 // Advanced search with external JSON index & Fuse fuzzy tuning
 import type { Product } from './types';
+// NOTE: CI/server fallback: nếu chạy trong môi trường Node (không có window)
+// ta đọc trực tiếp file public/search-index.json bằng fs để tránh lỗi fetch relative URL.
 
 interface UnifiedIndexItem { id: string; slug: string; name: string; description: string; featured?: boolean; type: 'product' | 'blog'; }
 
@@ -10,10 +12,31 @@ let indexPromise: Promise<UnifiedIndexItem[]> | null = null;
 
 async function loadIndex(): Promise<UnifiedIndexItem[]> {
   if (indexData) return indexData;
+  // Server / test environment
+  if (typeof window === 'undefined') {
+    if (!indexPromise) {
+      indexPromise = (async (): Promise<UnifiedIndexItem[]> => {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          const filePath = path.join(process.cwd(), 'public', 'search-index.json');
+          const raw = await fs.readFile(filePath, 'utf8');
+          indexData = JSON.parse(raw);
+        } catch (err) {
+          console.error('[search] Failed to read search-index.json (fs fallback)', err);
+          indexData = [];
+        }
+        return indexData || [];
+      })();
+    }
+    return indexPromise;
+  }
   if (!indexPromise) {
     indexPromise = fetch('/search-index.json', { cache: 'force-cache' })
+      .then(r => (r.ok ? r : Promise.reject(new Error('Failed to fetch search-index.json'))))
       .then(r => r.json())
-      .then(d => (indexData = d));
+      .then(d => (indexData = d))
+      .catch(err => { console.error('[search] fetch error', err); return (indexData = []); });
   }
   return indexPromise;
 }
