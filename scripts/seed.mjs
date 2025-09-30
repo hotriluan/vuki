@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma.js';
 import { categories as seedCategories, products as seedProducts } from '../src/lib/data.js';
+import { getAllPosts } from '../src/lib/blog.js';
 
 async function main() {
   console.log('Seeding database...');
@@ -61,6 +62,31 @@ async function main() {
         });
       }
     }
+  }
+
+  // Seed blog posts if table empty
+  try {
+    const count = await prisma.blogPost.count();
+    if (count === 0) {
+      const posts = getAllPosts();
+      if (posts.length) {
+        console.log('Seeding blog posts:', posts.length);
+        for (const post of posts) {
+          await prisma.blogPost.create({
+            data: {
+              slug: post.slug,
+              title: post.title,
+              excerpt: post.excerpt,
+              contentHtml: post.html,
+              tags: post.tags || [],
+              publishedAt: new Date(post.publishedAt)
+            }
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Skipping blog post seeding (error):', e.message);
   }
 
   console.log('Seed completed.');
