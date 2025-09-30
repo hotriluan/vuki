@@ -1,18 +1,46 @@
 import { FeaturedProducts } from './(sections)/FeaturedProducts';
+import { HeroSlider, type HeroSlide } from '@/components/HeroSlider';
+
+const heroSlides: HeroSlide[] = [
+  {
+    id: 'hero-1',
+    image: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=1600&q=60',
+    alt: 'White minimalist running shoes on gradient backdrop',
+    heading: 'Bước Chân Tự Tin',
+    subheading: 'Bộ sưu tập giày hiệu suất & phong cách hằng ngày – tối ưu thoải mái, tối ưu cảm hứng.',
+    ctaLabel: 'Mua ngay',
+    ctaHref: '/category/sneakers',
+    theme: 'dark',
+    overlayOpacity: 0.45
+  },
+  {
+    id: 'hero-2',
+    image: 'https://images.unsplash.com/photo-1597045566677-8cf032ed6634?auto=format&fit=crop&w=1600&q=60',
+    alt: 'Close up of leather boot with dramatic lighting',
+    heading: 'Chất Liệu Tuyển Chọn',
+    subheading: 'Da thuộc xử lý mềm – bền đẹp theo thời gian. Khám phá dòng boots mới.',
+    ctaLabel: 'Xem boots',
+    ctaHref: '/category/boots',
+    theme: 'dark',
+    overlayOpacity: 0.5
+  },
+  {
+    id: 'hero-3',
+    image: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&w=1600&q=60',
+    alt: 'Sport shoes in dynamic motion with dust particles',
+    heading: 'Hiệu Năng & Kiểu Dáng',
+    subheading: 'Thiết kế khí động học hỗ trợ chạy dài & luyện tập cường độ cao.',
+    ctaLabel: 'Performance Line',
+    ctaHref: '/category/limited',
+    theme: 'dark',
+    overlayOpacity: 0.55
+  }
+];
 
 export default function HomePage() {
   return (
     <>
-      <section className="bg-gradient-to-b from-white to-gray-50 border-b">
-        <div className="mx-auto max-w-7xl px-4 py-16">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">Modern Shoe Store</h1>
-          <p className="text-gray-600 max-w-xl text-sm md:text-base">A clean, extensible starter for building a footwear e-commerce experience. Customize categories, hook up a CMS or backend, and launch fast.</p>
-          <div className="mt-8 flex gap-4">
-            <a href="#featured" className="rounded bg-brand-accent px-6 py-3 text-white text-sm font-medium hover:brightness-110">Shop Featured</a>
-            <a href="/category/sneakers" className="rounded border border-gray-300 px-6 py-3 text-sm font-medium hover:bg-gray-100">Sneakers</a>
-          </div>
-        </div>
-      </section>
+      <HeroSlider slides={heroSlides} className="border-b" />
       <div id="featured">
         <FeaturedProducts />
       </div>
