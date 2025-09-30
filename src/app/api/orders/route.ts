@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getOrCreateSession } from '@/lib/session';
 
 interface OrderItemInput { productId: string; variantId?: string; quantity: number; }
 interface CreateOrderBody { items: OrderItemInput[] }
 
-function getUserId(req: Request): string | null {
+// Deprecated header fallback – sẽ bỏ dần
+function getLegacyUserId(req: Request): string | null {
   const header = req.headers.get('x-user-id');
   return header || null;
 }
@@ -75,7 +77,19 @@ export async function POST(req: Request) {
     });
   }
 
-  const userId = getUserId(req); // optional for now
+  // Session cookie (anon user nếu chưa có). Nếu vẫn còn header cũ thì ưu tiên header (debug) nhưng sẽ bỏ.
+  let userId: string | undefined;
+  try {
+    const legacy = getLegacyUserId(req);
+    if (legacy) userId = legacy;
+    else {
+      const sess = await getOrCreateSession();
+      userId = sess.userId;
+    }
+  } catch (e) {
+    // Nếu session subsystem lỗi, vẫn cho tạo đơn không user (giảm gián đoạn) – có thể siết lại sau
+    userId = undefined;
+  }
 
   try {
   const created = await prisma.$transaction(async (tx: any) => {
@@ -93,7 +107,7 @@ export async function POST(req: Request) {
           });
         }
       }
-      const order = await tx.order.create({ data: { total, userId: userId || undefined } });
+  const order = await tx.order.create({ data: { total, userId } });
       await tx.orderItem.createMany({ data: orderItemsData.map(oi => ({ ...oi, orderId: order.id })) });
       return order;
     });

@@ -78,6 +78,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]
+  sessions     Session[]
 }
 
 model Order {
@@ -109,4 +110,12 @@ enum OrderStatus {
   PAID
   FULFILLED
   CANCELLED
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  lastSeen  DateTime @updatedAt
 }
