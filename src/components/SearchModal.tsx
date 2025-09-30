@@ -7,10 +7,12 @@ import Link from 'next/link';
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
+  /** override debounce (ms) for tests */
+  debounceMs?: number;
 }
 
 // Simple trap + restore focus
-export function SearchModal({ open, onClose }: SearchModalProps) {
+export function SearchModal({ open, onClose, debounceMs }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [active, setActive] = useState(0);
@@ -18,6 +20,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [recent, setRecent] = useState<string[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
   const [indexReady, setIndexReady] = useState(false);
+  const DEBOUNCE_MS = typeof debounceMs === 'number' ? debounceMs : 220;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const prevFocus = useRef<HTMLElement | null>(null);
@@ -29,30 +32,29 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     if (!open) return;
     const q = query.trim();
     if (q.length < 2) {
-      window.clearTimeout(debounceRef.current);
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
       if (results.length) setResults([]);
       setActive(0);
       return;
     }
-    window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => {
-      (async () => {
-        if (!indexReady) {
-          setLoadingIndex(true);
-          try { await ensureIndexLoad(); setIndexReady(true); } finally { setLoadingIndex(false); }
-        }
-  const r = await searchProducts(q);
-        setResults(r);
-        setActive(0);
-        setRecent(prev => {
-          const next = [q, ...prev.filter(x => x !== q)].slice(0, 8);
-          try { localStorage.setItem('recent-searches', JSON.stringify(next)); } catch {}
-          return next;
-        });
-      })();
-    }, 220);
-    return () => window.clearTimeout(debounceRef.current);
-  }, [query, open, indexReady, results.length]);
+    const runSearch = async () => {
+      if (!indexReady) {
+        setLoadingIndex(true);
+        try { await ensureIndexLoad(); setIndexReady(true); } finally { setLoadingIndex(false); }
+      }
+      const r = await searchProducts(q);
+      setResults(r);
+      setActive(0);
+      setRecent(prev => {
+        const next = [q, ...prev.filter(x => x !== q)].slice(0, 8);
+        try { localStorage.setItem('recent-searches', JSON.stringify(next)); } catch {}
+        return next;
+      });
+    };
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(runSearch, DEBOUNCE_MS);
+    return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
+  }, [query, open, indexReady, results.length, DEBOUNCE_MS]);
 
   // Load recent when opened
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, beforeAll, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SearchModal } from '../SearchModal';
 import * as searchLib from '@/lib/search';
@@ -17,29 +17,16 @@ beforeAll(() => {
   });
 });
 
-beforeEach(() => {
-  vi.useFakeTimers();
-});
-afterEach(() => {
-  vi.runOnlyPendingTimers();
-  vi.useRealTimers();
-});
 
 describe('SearchModal unified blog search', () => {
   it('returns blog result when query matches only blog description token', async () => {
     // Spy real searchProducts but let it execute (we don't mock implementation)
     // Instead we rely on underlying fuse after index load.
     const spy = vi.spyOn(searchLib, 'searchProducts');
-    await act(async () => { render(<SearchModal open={true} onClose={() => {}} />); });
+    await act(async () => { render(<SearchModal open={true} onClose={() => {}} debounceMs={0} />); });
   const input = screen.getByLabelText(/Search products and blog/i);
-    // Query with word 'Humidity' (only exists inside blog description in our mock index)
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Humidity' } });
-      vi.advanceTimersByTime(240);
-    });
-    // Await any async flush
-    await act(async () => { vi.runOnlyPendingTimers(); });
-  const options = screen.getAllByRole('option');
+    await act(async () => { fireEvent.change(input, { target: { value: 'Humidity' } }); });
+    const options = await screen.findAllByRole('option');
   expect(options.length).toBe(1);
   const link = options[0].closest('a');
   expect(link).toBeTruthy();
