@@ -1,5 +1,18 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
+import withPWAOrig from 'next-pwa';
+
+// next-pwa wrapper (disable in dev for faster HMR)
+const withPWA = withPWAOrig({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  fallbacks: {
+    // We will create an offline page for generic navigation fallback
+    document: '/offline'
+  }
+});
 
 // Cho phép phân tích bundle khi đặt ANALYZE=1
 const withAnalyzer = process.env.ANALYZE ? require('@next/bundle-analyzer')({ enabled: true }) : (cfg => cfg);
@@ -10,6 +23,9 @@ const baseConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' }
     ]
+  },
+  experimental: {
+    // Ensure app dir + SW coexist; keep defaults plus any needed future flags
   },
   async headers() {
     // NOTE: Nếu deploy trên Vercel, các header này sẽ được áp dụng edge.
@@ -27,6 +43,9 @@ const baseConfig = {
       "img-src 'self' https://images.unsplash.com data:",
       "font-src 'self' data:",
       "connect-src 'self'",
+      // Allow manifest + service worker
+      "manifest-src 'self'",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "media-src 'self'",
       "frame-src 'none'",
@@ -48,4 +67,7 @@ const baseConfig = {
   }
 };
 
-export default withAnalyzer(baseConfig);
+// Compose plugins: analyzer first, then PWA
+const withPlugins = cfg => withPWA(withAnalyzer(cfg));
+
+export default withPlugins(baseConfig);

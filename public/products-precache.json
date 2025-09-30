@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2025-09-30T00:00:00.000Z",
+  "products": [
+    { "id": "p-1", "name": "Urban Runner White", "slug": "urban-runner-white", "price": 1590000, "salePrice": 1290000 },
+    { "id": "p-2", "name": "Trail Explorer", "slug": "trail-explorer", "price": 1890000, "salePrice": 1590000 },
+    { "id": "p-3", "name": "Minimalist Leather Boot", "slug": "minimalist-leather-boot", "price": 2350000 },
+    { "id": "p-4", "name": "Performance Sock", "slug": "performance-sock", "price": 99000, "salePrice": 79000 }
+  ]
+}
