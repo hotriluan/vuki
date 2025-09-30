@@ -1,7 +1,21 @@
-import fs from 'fs';
-import path from 'path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
+
+// Lazy server-only modules (fs, path) so this file can be imported in the client bundle without build errors.
+let _fs: typeof import('fs') | null = null;
+let _path: typeof import('path') | null = null;
+function ensureNodeDeps() {
+  if (typeof window !== 'undefined') return false;
+  if (_fs && _path) return true;
+  try {
+    const req = (0, eval)('require');
+    _fs = req('fs');
+    _path = req('path');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export interface PostFrontMatter {
   slug: string;
@@ -18,11 +32,15 @@ export interface PostData extends PostFrontMatter {
   html: string;
 }
 
-const POSTS_DIR = path.join(process.cwd(), 'content', 'posts');
+function getPostsDir() {
+  if (!ensureNodeDeps()) return '';
+  return _path!.join(process.cwd(), 'content', 'posts');
+}
 
 function readAllFilenames(): string[] {
-  if (!fs.existsSync(POSTS_DIR)) return [];
-  return fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
+  const dir = getPostsDir();
+  if (!dir || !_fs?.existsSync(dir)) return [];
+  return _fs.readdirSync(dir).filter(f => f.endsWith('.md'));
 }
 
 let _cache: { all: PostData[]; mtime: number } | null = null;
@@ -31,8 +49,10 @@ function loadAllInternal(): PostData[] {
   const files = readAllFilenames();
   const posts: PostData[] = [];
   for (const file of files) {
-    const full = path.join(POSTS_DIR, file);
-    const raw = fs.readFileSync(full, 'utf8');
+    const dir = getPostsDir();
+    if (!dir) break;
+    const full = _path!.join(dir, file);
+    const raw = _fs!.readFileSync(full, 'utf8');
     const { content, data } = matter(raw);
 
     // basic validation
@@ -55,8 +75,12 @@ function loadAllInternal(): PostData[] {
 }
 
 export function getAllPosts(): PostData[] {
-  const stat = fs.existsSync(POSTS_DIR) ? fs.statSync(POSTS_DIR) : null;
-  const dirMtime = stat ? stat.mtimeMs : 0;
+  const dir = getPostsDir();
+  let dirMtime = 0;
+  if (dir && _fs?.existsSync(dir)) {
+    const stat = _fs.statSync(dir);
+    dirMtime = stat.mtimeMs;
+  }
   if (_cache && _cache.mtime === dirMtime) return _cache.all;
   const all = loadAllInternal();
   _cache = { all, mtime: dirMtime };
