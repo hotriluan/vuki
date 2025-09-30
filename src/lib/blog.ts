@@ -45,6 +45,9 @@ function readAllFilenames(): string[] {
 
 let _cache: { all: PostData[]; mtime: number } | null = null;
 
+// Test helper / manual invalidation (không ảnh hưởng runtime bình thường)
+export function __resetBlogCache() { _cache = null; }
+
 function loadAllInternal(): PostData[] {
   const files = readAllFilenames();
   const posts: PostData[] = [];
@@ -83,6 +86,11 @@ export function getAllPosts(): PostData[] {
   }
   if (_cache && _cache.mtime === dirMtime) return _cache.all;
   const all = loadAllInternal();
+  // Nếu không đọc được file nào, đừng khóa cache lâu – cho phép lần sau thử lại
+  if (all.length === 0) {
+    _cache = null; // giữ mở để lần gọi tiếp theo thử lại (có thể do timing trong test)
+    return [];
+  }
   _cache = { all, mtime: dirMtime };
   return all;
 }

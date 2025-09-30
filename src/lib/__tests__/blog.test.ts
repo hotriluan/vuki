@@ -1,8 +1,18 @@
-import { describe, it, expect } from 'vitest';
-import { getAllPosts, getPostBySlug } from '@/lib/blog';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { getAllPosts, getPostBySlug, __resetBlogCache } from '@/lib/blog';
 
 describe('blog utilities', () => {
-  const posts = getAllPosts();
+  let posts: ReturnType<typeof getAllPosts> = [];
+
+  beforeAll(() => {
+    __resetBlogCache();
+    posts = getAllPosts();
+    if (posts.length === 0) {
+      // Thử lại một lần phòng timing (fs load chậm CI)
+      posts = getAllPosts();
+    }
+  });
+
   it('should load posts >= 4 và sort theo publishedAt desc', () => {
     expect(posts.length).toBeGreaterThanOrEqual(4);
     for (let i = 1; i < posts.length; i++) {

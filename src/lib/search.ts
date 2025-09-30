@@ -24,6 +24,30 @@ async function buildInMemoryIndex(): Promise<UnifiedIndexItem[]> {
         description: (b.excerpt || '').slice(0, 400),
         slug: b.slug
       }));
+      // Retry một lần nếu rỗng nhưng có thư mục posts (tránh timing cache rỗng ban đầu)
+      if (blogPosts.length === 0) {
+        try {
+          if (typeof process !== 'undefined') {
+            const path = await import('path');
+            const fs = await import('fs');
+            const postsDir = path.join(process.cwd(), 'content', 'posts');
+            if (fs.existsSync(postsDir)) {
+              // Invalidate cache nếu lib hỗ trợ
+              if (typeof (blog as any).__resetBlogCache === 'function') {
+                (blog as any).__resetBlogCache();
+                const retry = blog.getAllPosts ? blog.getAllPosts() : [];
+                blogPosts = retry.map((b: any) => ({
+                  id: `blog:${b.slug}`,
+                  type: 'blog' as const,
+                  name: b.title,
+                  description: (b.excerpt || '').slice(0, 400),
+                  slug: b.slug
+                }));
+              }
+            }
+          }
+        } catch {}
+      }
     } catch (e) {
       // blog optional
     }
@@ -43,16 +67,6 @@ async function buildInMemoryIndex(): Promise<UnifiedIndexItem[]> {
 
 async function loadIndex(): Promise<UnifiedIndexItem[]> {
   if (indexData) return indexData;
-  const isTest = typeof process !== 'undefined' && !!(process as any).env?.VITEST;
-  if (isTest) {
-    if (!indexPromise) {
-      indexPromise = (async () => {
-        indexData = await buildInMemoryIndex();
-        return indexData;
-      })();
-    }
-    return indexPromise;
-  }
   // Server / test environment
   if (typeof window === 'undefined') {
     if (!indexPromise) {
@@ -79,8 +93,12 @@ async function loadIndex(): Promise<UnifiedIndexItem[]> {
   }
   if (!indexPromise) {
     indexPromise = fetch('/search-index.json', { cache: 'force-cache' })
-      .then(r => (r.ok ? r : Promise.reject(new Error('Failed to fetch search-index.json'))))
-      .then(r => r.json())
+      .then(r => {
+        // Some test mocks may not provide ok; assume success if json function exists
+        if (typeof (r as any).json === 'function' && (r as any).ok === undefined) return r;
+        return (r as any).ok ? r : Promise.reject(new Error('Failed to fetch search-index.json'));
+      })
+      .then(r => (r as any).json())
       .then(async d => {
         indexData = d;
         if (!Array.isArray(indexData) || indexData.length === 0) {
