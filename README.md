@@ -2,6 +2,7 @@
 
 ![CI](https://github.com/hotriluan/vuki/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/hotriluan/vuki/branch/main/graph/badge.svg)](https://codecov.io/gh/hotriluan/vuki)
+[![GitHub release](https://img.shields.io/github/v/release/hotriluan/vuki?logo=github)](https://github.com/hotriluan/vuki/releases)
 
 > Badge đã trỏ tới repo thật. Nếu Codecov chưa hiển thị %, đảm bảo workflow chạy ít nhất một lần trên nhánh `main`.
 
@@ -13,6 +14,74 @@ Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Rout
 - Đã xoá hoàn toàn thư mục `app/` gốc tạm (shim) để tránh xung đột với `src/app`.
 - Nếu muốn tuỳ biến UI offline nâng cao, tạo component client riêng và build ra static HTML trước, hoặc dùng runtime hydrate trong `offline.html` (script inline nhỏ đọc cache).
 - Lưu ý: Không nên tạo lại `app/offline/page.tsx` trừ khi cũng có `app/layout.tsx`; cấu trúc chính thức: chỉ dùng `src/app`.
+
+## Versioning & Release
+
+Tự động hoá bằng **semantic-release**.
+
+| Thành phần | Mô tả |
+|------------|------|
+| Nhánh stable | `main` (phát hành bản thường) |
+| Nhánh prerelease | `alpha` (gắn hậu tố `-alpha.N`) |
+| File cấu hình | `.releaserc.json` |
+| Changelog | `CHANGELOG.md` (plugin `@semantic-release/changelog`) |
+| GitHub Release | Tạo tự động kèm ghi chú phiên bản |
+| Commit bump + changelog | Plugin `@semantic-release/git` (message: `chore(release): x.y.z [skip ci]`) |
+
+### Quy tắc commit (Conventional Commits)
+```
+feat(cart): add multi-currency toggle
+fix(search): debounce racing condition
+refactor(price): simplify discount calc
+docs(readme): add release section
+chore(deps): bump next to 14.2.33
+perf(fuse): memoize index
+test(cart): add coupon edge cases
+```
+
+BREAKING CHANGE:
+```
+feat!: change cart state shape
+
+Body:
+BREAKING CHANGE: cart items now store variant as object instead of id
+```
+
+### Mapping commit → version
+| Kiểu | Ảnh hưởng | Ví dụ bump (giả sử đang 0.1.0) |
+|------|-----------|---------------------------------|
+| fix  | patch     | 0.1.1 |
+| feat | minor     | 0.2.0 |
+| feat! / BREAKING CHANGE | major | 1.0.0 (khi đã >=1.x) |
+
+Trong giai đoạn 0.x semantic-release vẫn tuân thủ logic semver—`feat` vẫn tạo bump minor (0.1.0 → 0.2.0).
+
+### Prerelease flow
+1. Tạo nhánh / cập nhật nhánh `alpha` từ `main`.
+2. Push commit conventional (ví dụ `feat:`) → semantic-release sinh `0.2.0-alpha.1`.
+3. Thêm commit fix → `0.2.0-alpha.2`.
+4. Khi merge sang `main`, bản stable kế tiếp phát hành (0.2.0).
+
+### Dry-run cục bộ (chỉ để xem dự đoán)
+```bash
+npx semantic-release --dry-run
+```
+
+### Thực thi CI
+Workflow: `.github/workflows/release.yml` chạy trên push vào `main` hoặc `alpha`:
+1. Checkout (fetch-depth: 0)
+2. Install (npm ci)
+3. Test (Vitest)
+4. Build sanity
+5. `npm run release`
+
+### Tag baseline
+Đã tạo thủ công: `v0.1.0`. Commits mới conventional sau tag sẽ kích hoạt bump tự động.
+
+### Ghi chú
+- Không tự chỉnh `version` trong `package.json` thủ công—semantic-release quản lý.
+- Dùng `[skip ci]` chỉ khi commit thuần generated (semantic-release đã tự thêm).
+- Nếu cần bỏ qua phát hành cho một commit: dùng prefix khác ngoài các loại chuẩn (ví dụ `chore(local): ...`).
 
 
 ## Tính năng hiện tại
