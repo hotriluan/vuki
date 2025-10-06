@@ -22,6 +22,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const price = parseInt(form.get('price') as string, 10);
   const categoryId = form.get('categoryId') as string;
   const status = (form.get('status') as string || 'DRAFT').trim();
+  const featured = form.get('featured') === 'on'; // Checkbox value
   const images = (form.get('images') as string || '').split(',').map(s => s.trim()).filter(Boolean);
   const primaryImageAlt = (form.get('primaryImageAlt') as string || '').trim();
   // Variants now come as JSON string in field variantsJson
@@ -87,7 +88,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   try {
     // Handle publishedAt logic based on status change
     const updateData: any = {
-      name, slug, description, price, images, status,
+      name, slug, description, price, images, status, featured,
       categories: { deleteMany: {}, create: [{ categoryId }] },
       variants: variantData.length ? { deleteMany: {}, create: variantData.map(v => ({ label: v.label!, stock: v.stock, priceDiff: v.priceDiff, overridePrice: v.overridePrice || undefined })) } : { deleteMany: {} }
     };

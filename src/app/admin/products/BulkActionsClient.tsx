@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 
-export function BulkActionsClient({ products }: { products: { id: string; name: string; slug: string; price: number; status: string; publishedAt: string | null; categories: any[]; variants: any[] }[] }) {
+export function BulkActionsClient({ products }: { products: { id: string; name: string; slug: string; price: number; status: string; featured: boolean; publishedAt: string | null; categories: any[]; variants: any[] }[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +74,7 @@ export function BulkActionsClient({ products }: { products: { id: string; name: 
               <th className="p-2 text-left">Slug</th>
               <th className="p-2 text-right">Giá</th>
               <th className="p-2 text-left">Status</th>
+              <th className="p-2 text-center">Nổi bật</th>
               <th className="p-2 text-left">Danh mục</th>
               <th className="p-2 text-center">Variants</th>
               <th className="p-2 text-center">Publish</th>
@@ -101,6 +102,15 @@ export function BulkActionsClient({ products }: { products: { id: string; name: 
                     }`}>
                       {p.status === 'PUBLISHED' ? 'Published' : p.status === 'DRAFT' ? 'Draft' : 'Scheduled'}
                     </span>
+                  </td>
+                  <td className="p-2 text-center">
+                    {p.featured ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        ⭐ Nổi bật
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">-</span>
+                    )}
                   </td>
                   <td className="p-2 max-w-[150px] truncate">
                     {p.categories && p.categories.length > 0

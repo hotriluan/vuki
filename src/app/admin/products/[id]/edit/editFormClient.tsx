@@ -114,6 +114,18 @@ export default function EditProductForm({ product, categories }: Props) {
         </select>
       </div>
       <div>
+        <label className="flex items-center space-x-2">
+          <input 
+            name="featured" 
+            type="checkbox" 
+            defaultChecked={(product as any).featured || false}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium">Sản phẩm nổi bật</span>
+          <span className="text-xs text-gray-500">(Hiển thị trong mega menu và trang chủ)</span>
+        </label>
+      </div>
+      <div>
         <label className="block mb-1">Danh mục</label>
         <select name="categoryId" required className="w-full border rounded px-3 py-2" defaultValue={product.categories[0]?.categoryId}>
           <option value="">-- Chọn danh mục --</option>

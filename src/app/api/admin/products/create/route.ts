@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   const price = parseInt(form.get('price') as string, 10);
   const categoryId = form.get('categoryId') as string;
   const status = (form.get('status') as string || 'DRAFT').trim();
+  const featured = form.get('featured') === 'on'; // Checkbox value
   const images = (form.get('images') as string || '').split(',').map(s => s.trim()).filter(Boolean);
   const primaryImageAlt = (form.get('primaryImageAlt') as string || '').trim();
   // New variant JSON field
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
   let created: any = null;
   try {
     const createData: any = {
-      name, slug, description, price, images, status,
+      name, slug, description, price, images, status, featured,
       categories: { create: [{ categoryId }] },
       variants: variantData.length ? { create: variantData.map(v => ({ label: v.label!, stock: v.stock, priceDiff: v.priceDiff, overridePrice: v.overridePrice || undefined })) } : undefined
     };

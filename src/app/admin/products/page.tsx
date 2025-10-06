@@ -19,6 +19,7 @@ export default async function AdminProductsPage() {
       slug: true,
       price: true,
       status: true,
+      featured: true,
       publishedAt: true,
       categories: { include: { category: true } },
       variants: true,
