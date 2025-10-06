@@ -93,7 +93,7 @@ export function UserDropdown({ className = '', isLoggedIn = false, user }: UserD
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Panel className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <Menu.Items className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 focus:outline-none">
           {/* User Info Header */}
           <div className="p-4 border-b bg-gradient-to-r from-black to-gray-800">
             <div className="flex items-center space-x-3">
@@ -239,7 +239,7 @@ export function UserDropdown({ className = '', isLoggedIn = false, user }: UserD
               </div>
             </div>
           </div>
-        </Menu.Panel>
+        </Menu.Items>
       </Transition>
 
       {/* Logout Confirmation Modal */}

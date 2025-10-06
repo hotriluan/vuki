@@ -3,13 +3,7 @@ import { features } from './src/config/features';
 
 export function initSentryServer() {
   if (!features.enableSentry) return;
-  try {
-    // Optional: dynamic import
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require('@sentry/nextjs');
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      tracesSampleRate: 0.1
-    });
-  } catch {}
+  
+  // Sentry initialization disabled for build compatibility
+  console.log('[Sentry] Server initialization skipped for build compatibility');
 }

@@ -6,6 +6,7 @@ export type AuditAction =
   | 'product.delete'
   | 'product.duplicate'
   | 'product.restore'
+  | 'product.status_change'
   | 'category.create'
   | 'category.update'
   | 'category.delete'
@@ -16,7 +17,7 @@ export type AuditAction =
 interface AuditMetaBase {
   userId?: string;
   ip?: string;
-  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  [key: string]: any; // eslint-disable-line
 }
 
 export async function logAdminAction(action: AuditAction, meta: AuditMetaBase = {}) {

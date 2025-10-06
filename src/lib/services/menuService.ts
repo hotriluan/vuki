@@ -58,13 +58,14 @@ export class MenuService {
       return await prisma.category.findMany({
         include: {
           products: {
-            include: {
+            where: {
               product: {
-                where: {
-                  status: 'PUBLISHED',
-                  deletedAt: null,
-                },
+                status: 'PUBLISHED',
+                deletedAt: null,
               },
+            },
+            include: {
+              product: true,
             },
             take: 4, // Giới hạn 4 products per category
           },
@@ -118,8 +119,8 @@ export class MenuService {
             },
             {
               OR: [
-                { name: { contains: query, mode: 'insensitive' } },
-                { description: { contains: query, mode: 'insensitive' } },
+                { name: { contains: query } },
+                { description: { contains: query } },
               ],
             },
           ],

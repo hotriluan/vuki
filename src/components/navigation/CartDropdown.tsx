@@ -72,7 +72,7 @@ export function CartDropdown({ className = '' }: CartDropdownProps) {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Panel className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <Menu.Items className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 focus:outline-none">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -219,7 +219,7 @@ export function CartDropdown({ className = '' }: CartDropdownProps) {
               </p>
             </div>
           )}
-        </Menu.Panel>
+        </Menu.Items>
       </Transition>
     </Menu>
   );

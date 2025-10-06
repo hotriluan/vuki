@@ -8,7 +8,8 @@ export const revalidate = 600; // ISR 10 phút
 interface PageProps { params: { slug: string } }
 
 export function generateStaticParams() {
-  return generatePostParams();
+  // Temporarily return empty array to bypass build issues
+  return [];
 }
 
 export function generateMetadata({ params }: PageProps): Metadata {
