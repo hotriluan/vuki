@@ -76,6 +76,7 @@ jobs:
       - name: Prepare env
         run: |
           echo "DATABASE_URL=mysql://root:root@127.0.0.1:3306/vuki" >> $GITHUB_ENV
+          echo "SKIP_INTEGRATION=" >> $GITHUB_ENV
       - name: Prisma generate
         run: npx prisma generate
       - name: Migrate deploy

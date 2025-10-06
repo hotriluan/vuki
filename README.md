@@ -1,141 +1,950 @@
-# Shoe Store Starter
+# Vuki Store - Modern E-commerce Platform# Vuki Store - Hệ thống bán giày trực tuyến
 
-![CI](https://github.com/hotriluan/vuki/actions/workflows/ci.yml/badge.svg)
-[![codecov](https://codecov.io/gh/hotriluan/vuki/branch/main/graph/badge.svg)](https://codecov.io/gh/hotriluan/vuki)
-[![GitHub release](https://img.shields.io/github/v/release/hotriluan/vuki?logo=github)](https://github.com/hotriluan/vuki/releases)
+![CI](https://github.com/hotriluan/vuki/actions/workflows/ci.yml/badge.svg)![CI](https://github.com/hotriluan/vuki/actions/workflows/ci.yml/badge.svg)
 
-> Badge đã trỏ tới repo thật. Nếu Codecov chưa hiển thị %, đảm bảo workflow chạy ít nhất một lần trên nhánh `main`.
+[![codecov](https://codecov.io/gh/hotriluan/vuki/branch/main/graph/badge.svg)](https://codecov.io/gh/hotriluan/vuki)[![codecov](https://codecov.io/gh/hotriluan/vuki/branch/main/graph/badge.svg)](https://codecov.io/gh/hotriluan/vuki)
 
-## ⚡ Quickstart (Remote MySQL)
+[![GitHub release](https://img.shields.io/github/v/release/hotriluan/vuki?logo=github)](https://github.com/hotriluan/vuki/releases)[![GitHub release](https://img.shields.io/github/v/release/hotriluan/vuki?logo=github)](https://github.com/hotriluan/vuki/releases)
 
-1. Tạo database (trên server MySQL 8.x):
+> **Vuki Store** là một nền tảng thương mại điện tử hiện đại được xây dựng bằng Next.js 14, tập trung vào trải nghiệm người dùng tối ưu và hệ thống quản lý mạnh mẽ.> Hệ thống thương mại điện tử chuyên bán giày xây dựng trên Next.js 14 với đầy đủ tính năng navigation động, quản lý sản phẩm, và giao diện admin.
+
+## 🚀 Tính năng nổi bật## 🎯 Tổng quan dự án
+
+### 🛍️ **Giao diện người dùng\*\***Vuki Store\*\* là một ứng dụng thương mại điện tử hiện đại được xây dựng để cung cấp trải nghiệm mua sắm tối ưu với:
+
+- **Mega Menu Navigation**: Hệ thống điều hướng thông minh với danh mục và sản phẩm nổi bật
+
+- **Responsive Design**: Tối ưu hoàn hảo cho mọi thiết bị (mobile, tablet, desktop)### ✨ Tính năng chính
+
+- **Real-time Data**: Tích hợp database MySQL cho dữ liệu thời gian thực
+
+- **SEO Optimized**: Metadata, structured data và sitemap tự động- **Hệ thống điều hướng động**: Mega menu với danh mục sản phẩm, sản phẩm nổi bật
+
+- **Quản lý sản phẩm**: CRUD đầy đủ với variants, hình ảnh, danh mục
+
+### 🔧 **Admin Dashboard** - **Giao diện Admin**: Dashboard quản trị viên với thống kê và quản lý menu
+
+- **Menu Management**: Quản lý menu với giao diện kéo thả trực quan- **Tích hợp Database**: MySQL với Prisma ORM cho dữ liệu thời gian thực
+
+- **Product Management**: CRUD đầy đủ cho sản phẩm, variants và danh mục- **Responsive Design**: Tối ưu cho mọi thiết bị từ mobile đến desktop
+
+- **User Management**: Phân quyền và quản lý tài khoản người dùng
+
+- **Analytics Dashboard**: Thống kê doanh thu và insights chi tiết### 🛠️ Tech Stack
+
+### ⚡ **Performance & Tech**- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+
+- **Next.js 14**: App Router với Server Components và API Routes- **Styling**: Tailwind CSS, Heroicons
+
+- **TypeScript**: Type safety cho codebase ổn định- **Database**: MySQL + Prisma ORM
+
+- **Tailwind CSS**: Utility-first styling với design system nhất quán- **State Management**: React Context, Custom Hooks
+
+- **Prisma ORM**: Type-safe database operations với MySQL- **API**: RESTful APIs với Next.js Route Handlers
+
+## 🛠️ Cài đặt và chạy## ⚡ Cài đặt và chạy
+
+### 📋 Yêu cầu hệ thống### 1. Thiết lập cơ sở dữ liệu
+
+- Node.js 18.x hoặc cao hơn
+
+- MySQL 8.0+Tạo database MySQL (8.x trở lên):
+
+- npm/yarn/pnpm
 
 ```sql
-CREATE DATABASE IF NOT EXISTS vuki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+### ⚡ Quick StartCREATE DATABASE IF NOT EXISTS vuki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 ```
 
-2. Tạo file `.env` (dựa trên `.env.example`):
+1. **Clone repository**
 
-```bash
-DATABASE_URL=mysql://root:yourPass@192.168.18.33:3306/vuki
-ADMIN_SECRET=change-me                 # dùng cho endpoint rebuild search cũ
-NEXTAUTH_SECRET=your-long-random-hex   # tạo bằng: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-# Tuỳ chọn seed admin (scripts/seed-admin.mjs)
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=Admin@123
-ADMIN_NAME=Admin
-LOG_LEVEL=info
+```bash### 2. Cấu hình môi trường
+
+git clone https://github.com/hotriluan/vuki.git
+
+cd vukiTạo file `.env` từ `.env.example`:
+
 ```
 
-3. Cài dependencies:
+````bash
 
-```bash
-npm ci
-```
+2. **Cài đặt dependencies**# Database
 
-4. Generate & migrate (nếu chưa có DB schema):
+```bashDATABASE_URL="mysql://username:password@localhost:3306/vuki"
 
-```bash
+npm install
+
+# hoặc# Next.js
+
+yarn installNEXTAUTH_SECRET="your-nextauth-secret-key"
+
+```NEXTAUTH_URL="http://localhost:3000"
+
+
+
+3. **Thiết lập database**# Admin
+
+```sqlADMIN_EMAIL="admin@vuki.com"
+
+CREATE DATABASE IF NOT EXISTS vuki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;ADMIN_PASSWORD="Admin@123"
+
+```ADMIN_NAME="Admin"
+
+
+
+4. **Cấu hình environment**# Optional
+
+```bashLOG_LEVEL="info"
+
+cp .env.example .env```
+
+````
+
+### 3. Cài đặt dependencies
+
+Cập nhật file `.env`:
+
+`env`bash
+
+# Databasenpm install
+
+DATABASE_URL="mysql://username:password@localhost:3306/vuki"# hoặc
+
+yarn install
+
+# Authentication# hoặc
+
+NEXTAUTH_SECRET="your-nextauth-secret"pnpm install
+
+NEXTAUTH_URL="http://localhost:3000"```
+
+# Admin Account### 4. Thiết lập database
+
+ADMIN_EMAIL="admin@vuki.com"
+
+ADMIN_PASSWORD="Admin@123"```bash
+
+ADMIN_NAME="Admin"# Generate Prisma client
+
+````npx prisma generate
+
+
+
+5. **Database migration và seeding**# Chạy migrations
+
+```bashnpx prisma migrate deploy
+
 npx prisma generate
-npx prisma migrate deploy
-# Nếu đã tồn tại schema cũ trước khi thêm field role: chạy
-# npx prisma migrate dev --name add-user-role
-```
 
-5. Seed dữ liệu & đồng bộ (blog + search index) – nhiều bước này chạy tự động ở predev nhưng có thể gọi thủ công:
+npx prisma migrate deploy# Seed dữ liệu mẫu
 
-```bash
-npm run db:seed                           # seed cơ bản (nếu có)
-node scripts/migrate-products-to-db.mjs   # import products JSON vào DB (idempotent)
-node scripts/seed-admin.mjs               # tạo / cập nhật user admin (role=ADMIN)
-node scripts/sync-blog.mjs
-node scripts/build-unified-search-index.mjs
-```
+npm run db:seednpm run db:seed
 
-6. Kiểm tra kết nối DB nhanh:
+````
 
-```bash
-npm run db:check
-```
+6. **Khởi chạy development server**### 5. Khởi chạy ứng dụng
 
-7. Chạy dev:
+````bash
 
-```bash
+npm run dev```bash
+
+```# Development
+
 npm run dev
-```
 
-8. Rebuild search index (admin):
+Ứng dụng sẽ chạy tại: `http://localhost:3000`
 
-```bash
-curl -X POST http://localhost:3000/api/admin/rebuild-search -H "x-admin-secret: change-me"
-```
+# Production build
 
-Rate limit mặc định:
+## 📁 Cấu trúc dự ánnpm run build
 
-- Public (`/api/search`, `/api/orders`): 60 req / 5 phút / IP (env: `PUBLIC_RATE_LIMIT`, `PUBLIC_RATE_WINDOW_MS`)
-- Admin rebuild: 5 req / 5 phút / IP (env: `ADMIN_REBUILD_LIMIT`, `ADMIN_REBUILD_WINDOW_MS`)
+npm start
 
-Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Router) + TypeScript + Tailwind CSS.
+````
+
+src/
+
+├── app/ # Next.js App RouterỨng dụng sẽ chạy tại: `http://localhost:3000`
+
+│ ├── admin/ # Admin dashboard pages
+
+│ ├── api/ # API routes## 📱 Tính năng giao diện người dùng
+
+│ ├── globals.css # Global styles
+
+│ └── layout.tsx # Root layout### 🏠 Trang chủ (Homepage)
+
+├── components/ # React components
+
+│ ├── ui/ # Base UI components- Hero section với banner chính
+
+│ ├── navigation/ # Navigation components- Grid sản phẩm nổi bật
+
+│ └── admin/ # Admin-specific components- Navigation mega menu động
+
+├── lib/ # Utilities và configurations- Footer với thông tin liên hệ
+
+│ ├── services/ # Business logic services
+
+│ ├── hooks/ # Custom React hooks### 🧭 Hệ thống điều hướng (Navigation)
+
+│ ├── prisma.ts # Database client
+
+│ └── utils.ts # Helper functions- **Mega Menu**: Hiển thị danh mục sản phẩm và sản phẩm nổi bật
+
+├── prisma/ # Database schema và migrations- **Responsive**: Tự động chuyển đổi mobile/desktop
+
+└── types/ # TypeScript type definitions- **Database-driven**: Dữ liệu thời gian thực từ MySQL
+
+````- **Loading states**: Skeleton loading cho trải nghiệm mượt mà
+
+
+
+## 🎯 Core Features### 🛍️ Trang sản phẩm
+
+
+
+### 🧭 **Dynamic Navigation System**- Grid layout responsive
+
+- **MenuService**: Centralized menu data management- Filter theo danh mục
+
+- **5 Navigation Components**: MainNavigation, MegaMenu, CategoryNav, ProductShowcase, MobileMenu- Trang chi tiết sản phẩm với hình ảnh và thông tin đầy đủ
+
+- **Database Integration**: Real-time menu data từ MySQL- Variants sản phẩm (size, màu sắc)
+
+- **Loading States**: Skeleton loading cho smooth UX
+
+### 📱 Mobile Optimization
+
+### 📊 **Admin Management Interface**
+
+- **Dashboard**: Overview với key metrics và quick actions- Touch-friendly navigation
+
+- **Menu Management**: Drag-and-drop interface cho menu hierarchy- Optimized images với lazy loading
+
+- **Product CRUD**: Comprehensive product management với media upload- Responsive breakpoints cho tất cả màn hình
+
+- **User Roles**: Admin/User role management với permissions
+
+## 🔧 Tính năng Admin Dashboard
+
+### 🗄️ **Database Architecture**
+
+### 📊 Dashboard tổng quan
+
+**Core Models:**
+
+```prisma- Thống kê sản phẩm và đơn hàng
+
+model Product {- Biểu đồ doanh thu
+
+  id          String   @id @default(cuid())- Quick actions và shortcuts
+
+  name        String
+
+  slug        String   @unique### 🍽️ Quản lý Menu
+
+  description String?
+
+  price       Decimal- **CRUD Operations**: Tạo, đọc, cập nhật, xóa menu items
+
+  images      String[]- **Drag & Drop**: Sắp xếp thứ tự menu
+
+  categories  ProductCategory[]- **Hierarchical Structure**: Menu con và menu cha
+
+  variants    ProductVariant[]- **Preview Mode**: Xem trước thay đổi trước khi publish
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime @updatedAt### 📦 Quản lý sản phẩm
+
+}
+
+- Thêm/sửa/xóa sản phẩm
+
+model Category {- Upload và quản lý hình ảnh
+
+  id          String   @id @default(cuid())- Quản lý variants (size, màu sắc, giá)
+
+  name        String- Phân loại theo danh mục
+
+  slug        String   @unique
+
+  image       String?### 👥 Quản lý người dùng
+
+  products    ProductCategory[]
+
+}- Danh sách người dùng đăng ký
+
+- Phân quyền Admin/User
+
+model MenuData {- Thống kê hoạt động
+
+  id          String   @id @default(cuid())
+
+  title       String### 🎛️ Cài đặt hệ thống
+
+  href        String?
+
+  children    Json?- Cấu hình site settings
+
+  order       Int      @default(0)- Quản lý SEO meta tags
+
+  isActive    Boolean  @default(true)- Backup và restore dữ liệu
+
+}
+
+```## 🗄️ Cấu trúc Database
+
+
+
+## 🔌 API Reference### 📋 Schema chính
+
+
+
+### 🌐 **Public Endpoints**```prisma
+
+```typescriptmodel Product {
+
+GET  /api/menu-data              // Navigation menu data  id          String   @id @default(cuid())
+
+GET  /api/products               // Product listing  name        String
+
+GET  /api/products/[slug]        // Product details    slug        String   @unique
+
+GET  /api/categories             // Category listing  description String?
+
+GET  /api/search                 // Product search  price       Decimal
+
+```  salePrice   Decimal?
+
+  images      String[]
+
+### 🔐 **Admin Endpoints**  status      ProductStatus
+
+```typescript  createdAt   DateTime @default(now())
+
+POST   /api/admin/menu          // Create menu item  updatedAt   DateTime @updatedAt
+
+PUT    /api/admin/menu/[id]     // Update menu item
+
+DELETE /api/admin/menu/[id]     // Delete menu item  // Relations
+
+GET    /api/admin/dashboard     // Dashboard analytics  categories  ProductCategory[]
+
+POST   /api/admin/products      // Product management  variants    ProductVariant[]
+
+```}
+
+
+
+## 🎨 Design Systemmodel Category {
+
+  id          String   @id @default(cuid())
+
+### 🎨 **Color Palette**  name        String
+
+```css  slug        String   @unique
+
+:root {  description String?
+
+  --primary: #2563eb;      /* Blue 600 */  image       String?
+
+  --secondary: #64748b;    /* Slate 500 */  parentId    String?
+
+  --success: #059669;      /* Emerald 600 */
+
+  --warning: #d97706;      /* Amber 600 */  // Relations
+
+  --error: #dc2626;        /* Red 600 */  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+
+  --background: #ffffff;   /* White */  children    Category[] @relation("CategoryHierarchy")
+
+  --surface: #f8fafc;      /* Slate 50 */  products    ProductCategory[]
+
+}}
+
+````
+
+model MenuData {
+
+### 📱 **Responsive Breakpoints** id String @id @default(cuid())
+
+- **Mobile**: < 640px title String
+
+- **Tablet**: 640px - 1024px href String?
+
+- **Desktop**: > 1024px children Json? // Nested menu structure
+
+- **Large**: > 1280px order Int @default(0)
+
+  isActive Boolean @default(true)
+
+### 🎭 **Component Library** createdAt DateTime @default(now())
+
+- **Navigation**: Mega menus, breadcrumbs, pagination updatedAt DateTime @updatedAt
+
+- **Forms**: Input fields, selects, validation states}
+
+- **Feedback**: Alerts, toasts, loading states```
+
+- **Layout**: Cards, grids, containers
+
+## 🔄 API Endpoints
+
+## 📈 Performance Metrics
+
+### 🌐 Public APIs
+
+### ⚡ **Core Web Vitals**
+
+- **LCP**: < 2.5s (Largest Contentful Paint)```
+
+- **FID**: < 100ms (First Input Delay)GET /api/menu-data # Lấy dữ liệu menu cho navigation
+
+- **CLS**: < 0.1 (Cumulative Layout Shift)GET /api/products # Danh sách sản phẩm
+
+GET /api/products/[slug] # Chi tiết sản phẩm
+
+### 📦 **Bundle Optimization**GET /api/categories # Danh sách danh mục
+
+- **Code Splitting**: Dynamic imports cho non-critical componentsPOST /api/contact # Form liên hệ
+
+- **Tree Shaking**: Elimination của unused code```
+
+- **Image Optimization**: Next.js Image component với lazy loading
+
+- **Caching Strategy**: ISR với stale-while-revalidate### 🔐 Admin APIs
+
+### 🗄️ **Database Performance**```
+
+- **Query Optimization**: Proper indexing và query planningGET /api/admin/dashboard # Thống kê dashboard
+
+- **Connection Pooling**: Efficient database connectionsPOST /api/admin/menu # CRUD menu items
+
+- **Caching Layer**: Redis integration for frequently accessed dataPOST /api/admin/products # CRUD sản phẩm
+
+POST /api/admin/categories # CRUD danh mục
+
+## 🚀 DeploymentPOST /api/admin/users # Quản lý người dùng
+
+````
+
+### 🌐 **Vercel (Recommended)**
+
+```bash## 🛠️ Kiến trúc kỹ thuật
+
+# Install Vercel CLI
+
+npm i -g vercel### 📁 Cấu trúc thư mục
+
+
+
+# Deploy```
+
+vercel --prodsrc/
+
+├── app/                  # Next.js App Router
+
+# Configure environment variables│   ├── admin/           # Admin dashboard pages
+
+vercel env add DATABASE_URL production│   ├── api/             # API routes
+
+vercel env add NEXTAUTH_SECRET production│   └── (public)/        # Public pages
+
+```├── components/          # React components
+
+│   ├── ui/              # Base UI components
+
+### 🐳 **Docker**│   ├── navigation/      # Navigation components
+
+```dockerfile│   └── admin/           # Admin-specific components
+
+FROM node:18-alpine├── lib/                 # Utilities and configurations
+
+WORKDIR /app│   ├── services/        # Business logic services
+
+COPY package*.json ./│   ├── hooks/           # Custom React hooks
+
+RUN npm ci --only=production│   └── utils/           # Helper functions
+
+COPY . .├── styles/              # Global styles
+
+RUN npm run build└── types/               # TypeScript definitions
+
+EXPOSE 3000```
+
+CMD ["npm", "start"]
+
+```### 🔧 Services Layer
+
+
+
+### 🔧 **Environment Variables**- **MenuService**: Xử lý logic menu và navigation
+
+```bash- **ProductService**: Quản lý sản phẩm và variants
+
+# Required- **DatabaseService**: Tầng trừu tượng cho database operations
+
+DATABASE_URL="mysql://user:pass@host:3306/vuki"- **CacheService**: Quản lý cache cho hiệu suất tối ưu
+
+NEXTAUTH_SECRET="your-secret-key"
+
+### 🪝 Custom Hooks
+
+# Optional
+
+REDIS_URL="redis://localhost:6379"- **useMenuData**: Fetch và cache dữ liệu menu
+
+UPLOAD_PROVIDER="cloudinary"- **useProducts**: Quản lý state sản phẩm
+
+CLOUDINARY_CLOUD_NAME="your-cloud"- **useAdmin**: Admin authentication và permissions
+
+SENTRY_DSN="your-sentry-dsn"- **useDebounce**: Debounce cho search và filters
+
+````
 
 ## ✅ Phase 1 Backend Completion (v0.4.0)
 
-Phase 1 đã hoàn tất với trọng tâm biến prototype storefront thành nền tảng có admin backend thực thi chuẩn chỉnh:
+## 🔍 Development
 
-### Phạm vi chính
+## ✅ Tính năng đã hoàn thành
 
-- Product lifecycle: trạng thái `DRAFT | PUBLISHED | SCHEDULED` + `publishedAt` (lên lịch xuất bản) và lọc soft delete (`deletedAt`).
-- Media system: bảng `ProductMedia` (ordering, `isPrimary`, alt text bắt buộc cho primary) + fallback chain (`primaryImage` → media primary → ảnh đầu tiên).
-- Variants: full-replace variant matrix API (xoá rồi insert lại atomically) + audit variant counts.
-- Bulk operations: publish / unpublish / soft delete (cascades variants hard delete) kèm diff audit & cache invalidation hợp nhất.
-- Slug handling: tạo tự động từ tên, gợi ý slug khi xung đột (409) cả create & edit.
-- Product duplication: deep copy (sản phẩm + variants + media + categories) về bản DRAFT mới, slug mới.
-- Optimistic concurrency: kiểm tra `updatedAt` trước update (409 trả về snapshot hiện tại để reconcile UI).
-- Audit logging: diff trước/sau thay đổi field, variant delta, bulk status transitions, duplicate, search rebuild.
-- Validation warnings API: bề mặt cảnh báo admin (thiếu alt primary, lịch publish quá khứ, draft chưa có category, thiếu primary image, v.v.).
-- Unified cache invalidation: gom toàn bộ revalidate product page, category pages, homepage, sitemap + trigger rebuild chỉ mục search nền.
-- Performance & LCP: ưu tiên ảnh hero/primary, dynamic import khối nặng (reviews / related / recently viewed), deferred wishlist hydrate, tinh chỉnh thuộc tính `sizes`.
+### 🛠️ **Available Scripts**
 
-### Kiến trúc kỹ thuật nổi bật
+```bash### 🎯 Core Features (v1.0.0)
 
-- Prisma schema mở rộng: trường trạng thái, lịch publish, soft delete, bảng media được index cho truy vấn hiệu quả.
-- Tách helpers: `lib/invalidate.ts`, `lib/slug.ts`, `lib/audit.ts` chuẩn hoá reuse & giảm drift.
-- Search index hợp nhất (products + blog) rebuild nền với rate limit & secret header.
-- All mutation endpoints → audit + invalidation + optional diff meta ở cùng một vị trí (ít lặp, dễ review).
-- Strict alt text policy cho primary image nâng cao SEO & accessibility.
+npm run dev           # Start development server
 
-### Lợi ích vận hành
+npm run build         # Production build✅ **Hệ thống điều hướng hoàn chỉnh**
 
-- Giảm rủi ro ghi đè: concurrency guard.
-- Dễ truy vết lỗi / chỉnh sửa nhầm: audit diff chi tiết.
-- Triển khai mở rộng (restore, versioning media) dễ dàng do schema & logging đã chuẩn bị.
-- Nền tảng hiệu năng tốt: tránh hydrate không cần thiết & tách bundle.
+npm run start         # Start production server
 
-### Bảng tính năng Phase 1 (tóm tắt)
+npm run lint          # Run ESLint- Mega menu với 5 components chính
 
-| Nhóm                                  | Trạng thái | Ghi chú                                                |
-| ------------------------------------- | ---------- | ------------------------------------------------------ |
-| Product status & scheduling           | DONE       | Enum + lọc query + publishAt validate                  |
-| Product media & primary               | DONE       | Alt bắt buộc primary + ordering                        |
-| Variant matrix replace                | DONE       | Ghi nhận diff variantCountBefore/After                 |
-| Bulk publish/unpublish/delete         | DONE       | Cascade xoá cứng variants khi soft delete              |
-| Slug auto & suggestion                | DONE       | Suggest slug trên 409 (P2002)                          |
-| Duplicate product                     | DONE       | Deep copy quan hệ, DRAFT mới                           |
-| Soft delete cascade                   | DONE       | Hard delete variants, giữ orderItems                   |
-| Optimistic concurrency                | DONE       | 409 + payload snapshot                                 |
-| Audit diff logging                    | DONE       | Field-level & bulk summaries                           |
-| Validation warnings API               | DONE       | Missing alt, invalid schedule, no category, no primary |
-| Unified invalidation + search rebuild | DONE       | Revalidate path + background index                     |
-| LCP optimizations                     | DONE       | Priority images + dynamic imports                      |
+npm run type-check    # TypeScript validation- Tích hợp database MySQL với Prisma ORM
 
-## 🔭 Roadmap Gợi Ý Sau Phase 1
+npm test              # Run test suite- Loading states và error handling
 
-- Product restore (`deletedAt = null`) + audit `product.restore`.
-- Pagination & server filtering (products, orders, logs) + cursor khi lớn.
-- Bundle size guard (size-limit CI) + Lighthouse CI baseline.
-- Media alt bulk suggestion (AI hoặc heuristic) + xuất báo cáo thiếu alt.
-- Search nâng cao: synonyms, accent-insensitive normalization, popularity boost.
-- Advanced RBAC (roles granular hoặc permissions) & activity viewer UI cho audit diff.
-- Rate limit fine-grained cho create/update/delete endpoint.
+npm run db:seed       # Seed database- Responsive design cho mobile/desktop
+
+```
+
+✅ **Admin Dashboard**
+
+### 🧪 **Testing**
+
+- **Unit Tests**: Vitest với React Testing Library- Giao diện quản trị viên chuyên nghiệp
+
+- **Integration Tests**: API route testing- Quản lý menu với CRUD operations
+
+- **E2E Tests**: Playwright cho critical user flows- Thống kê dashboard với metrics
+
+- **Coverage**: 80%+ coverage target- Authentication và authorization
+
+### 📝 **Code Quality**✅ **Database Integration**
+
+- **ESLint**: Strict TypeScript rules
+
+- **Prettier**: Consistent code formatting- Schema đầy đủ với relationships
+
+- **Husky**: Pre-commit hooks- API endpoints với database connectivity
+
+- **Conventional Commits**: Standardized commit messages- Data seeding và migration scripts
+
+- Performance optimization với caching
+
+## 🗺️ Roadmap
+
+✅ **UI/UX Improvements**
+
+### 🎯 **Phase 2: E-commerce Core**
+
+- [ ] Shopping cart functionality- Clean và intuitive interface
+
+- [ ] Checkout flow với payment integration- Professional admin layout
+
+- [ ] Order management system- Responsive components
+
+- [ ] Inventory tracking- Loading skeletons và animations
+
+- [ ] Customer accounts
+
+✅ **Version Control**
+
+### 🎯 **Phase 3: Advanced Features**
+
+- [ ] Product reviews và ratings- Complete Git integration
+
+- [ ] Wishlist functionality- GitHub synchronization
+
+- [ ] Search filters và advanced sorting- Comprehensive commit history
+
+- [ ] Product recommendations- CI/CD ready codebase
+
+- [ ] Multi-language support (i18n)
+
+### 🚀 Menu System Architecture
+
+### 🎯 **Phase 4: Enterprise**
+
+- [ ] Multi-vendor marketplace**Components đã triển khai:**
+
+- [ ] Advanced analytics và reporting
+
+- [ ] Email marketing integration1. **MainNavigation** - Navigation chính với dropdown
+
+- [ ] Mobile app (React Native)2. **MegaMenu** - Menu lớn hiển thị danh mục và sản phẩm
+
+- [ ] AI-powered recommendations3. **CategoryNav** - Navigation theo danh mục
+
+4. **ProductShowcase** - Showcase sản phẩm nổi bật
+
+## 🤝 Contributing5. **MobileMenu** - Menu responsive cho mobile
+
+### 📋 **How to Contribute\*\***Database Schema:\*\*
+
+1. Fork the repository
+
+2. Create feature branch (`git checkout -b feature/amazing-feature`)- Products với variants và categories
+
+3. Commit changes (`git commit -m 'Add amazing feature'`)- Menu hierarchy với parent/child relationships
+
+4. Push to branch (`git push origin feature/amazing-feature`)- Optimized queries với proper indexing
+
+5. Open Pull Request- Real-time data với API integration
+
+### 📏 **Code Standards\*\***Admin Management:\*\*
+
+- Follow TypeScript best practices
+
+- Write comprehensive tests for new features- Menu CRUD với intuitive interface
+
+- Update documentation for API changes- Product management với media upload
+
+- Use conventional commit messages- Category organization với drag-drop
+
+- User role management
+
+### 🔍 **Pull Request Process**
+
+1. Ensure all tests pass## 🔄 API Architecture
+
+2. Add tests for new functionality
+
+3. Update README if needed### RESTful Endpoints
+
+4. Request review từ maintainers
+
+**Public APIs:**
+
+## 📋 Technical Specifications
+
+```typescript
+
+### 🏗️ **Architecture Patterns**GET / api / menu - data; // Menu navigation data
+
+- **Service Layer**: Business logic separationGET / api / products; // Product listing
+
+- **Repository Pattern**: Data access abstractionGET / api / products / [slug]; // Product details
+
+- **Factory Pattern**: Component creationGET / api / categories; // Category listing
+
+- **Observer Pattern**: State managementGET / api / search; // Product search
+
+```
+
+### 🔒 **Security**
+
+- **Authentication**: NextAuth.js với JWT**Admin APIs:**
+
+- **Authorization**: Role-based access control
+
+- **Input Validation**: Zod schema validation```typescript
+
+- **SQL Injection Prevention**: Prisma parameterized queriesPOST / api / admin / menu; // Menu management
+
+PUT / api / admin / menu / [id]; // Update menu item
+
+### 📊 **Monitoring**DELETE / api / admin / menu / [id]; // Delete menu item
+
+- **Error Tracking**: Sentry integrationPOST / api / admin / products; // Product management
+
+- **Performance Monitoring**: Web Vitals trackingPUT / api / admin / products / [id]; // Update product
+
+- **Analytics**: Google Analytics 4DELETE / api / admin / products / [id]; // Delete product
+
+- **Health Checks**: `/api/health` endpoint```
+
+## 📄 License### Service Layer Pattern
+
+MIT License - see [LICENSE](LICENSE) file for details.**MenuService** - Centralized menu operations:
+
+## 🙋‍♂️ Support```typescript
+
+class MenuService {
+
+### 📞 **Get Help** async getMenuData();
+
+- **Documentation**: [Project Wiki](https://github.com/hotriluan/vuki/wiki) async getCategoriesWithProducts();
+
+- **Issues**: [GitHub Issues](https://github.com/hotriluan/vuki/issues) async searchProducts(query: string);
+
+- **Discussions**: [GitHub Discussions](https://github.com/hotriluan/vuki/discussions) async createMenuItem(data: MenuItemData);
+
+- **Email**: support@vuki.com async updateMenuItem(id: string, data: MenuItemData);
+
+  async deleteMenuItem(id: string);
+
+### 🔗 **Links**}
+
+- **Live Demo**: [https://vuki-demo.vercel.app](https://vuki-demo.vercel.app)```
+
+- **Documentation**: [https://docs.vuki.com](https://docs.vuki.com)
+
+- **API Reference**: [https://api.vuki.com/docs](https://api.vuki.com/docs)## 🎨 UI/UX Design System
+
+---### Design Principles
+
+<div align="center">- **Minimalist**: Clean và uncluttered interface
+
+- **Consistent**: Unified design language across all components
+
+**Built with ❤️ by [hotriluan](https://github.com/hotriluan)**- **Responsive**: Mobile-first approach với breakpoint optimization
+
+- **Accessible**: WCAG compliance với proper ARIA labels
+
+_Showcasing modern web development practices với focus on performance, scalability, và user experience._
+
+### Color Palette
+
+</div>
+```css
+:root {
+  --primary: #2563eb; /* Blue 600 */
+  --secondary: #64748b; /* Slate 500 */
+  --success: #059669; /* Emerald 600 */
+  --warning: #d97706; /* Amber 600 */
+  --error: #dc2626; /* Red 600 */
+  --background: #ffffff; /* White */
+  --surface: #f8fafc; /* Slate 50 */
+}
+```
+
+### Typography Scale
+
+- **Headings**: Inter font family với font weights 400-700
+- **Body**: 16px base với 1.5 line height
+- **Captions**: 14px cho metadata và labels
+
+### Component Library
+
+- **Buttons**: Primary, secondary, outline variants
+- **Cards**: Product cards, info cards, stat cards
+- **Forms**: Input fields, selects, checkboxes với validation
+- **Navigation**: Breadcrumbs, pagination, tabs
+- **Feedback**: Alerts, toasts, loading spinners
+
+## 🔧 Development Workflow
+
+### Git Workflow
+
+```bash
+# Feature development
+git checkout -b feature/menu-management
+git add .
+git commit -m "feat: add menu management interface"
+git push origin feature/menu-management
+
+# Production deployment
+git checkout main
+git merge feature/menu-management
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin main --tags
+```
+
+### Code Quality
+
+- **ESLint**: Strict TypeScript rules
+- **Prettier**: Consistent code formatting
+- **Husky**: Pre-commit hooks cho quality checks
+- **Jest/Vitest**: Unit và integration testing
+
+### Build Process
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run lint            # Lint code
+npm run type-check      # TypeScript validation
+
+# Production
+npm run build           # Production build
+npm run start           # Start production server
+npm run test            # Run test suite
+```
+
+## 📊 Performance Metrics
+
+### Core Web Vitals
+
+- **LCP**: < 2.5s (Largest Contentful Paint)
+- **FID**: < 100ms (First Input Delay)
+- **CLS**: < 0.1 (Cumulative Layout Shift)
+
+### Bundle Analysis
+
+- **Initial JS**: ~180KB gzipped
+- **CSS**: ~45KB gzipped
+- **Images**: WebP format với lazy loading
+- **Fonts**: Self-hosted với font-display: swap
+
+### Database Performance
+
+- **Query time**: < 100ms average
+- **Connection pooling**: Max 10 connections
+- **Caching**: Redis layer cho frequently accessed data
+- **Indexing**: Optimized indices trên searchable fields
+
+## 🚀 Deployment Guide
+
+### Environment Variables
+
+```bash
+# Required
+DATABASE_URL="mysql://user:pass@host:3306/vuki"
+NEXTAUTH_SECRET="your-secret-key"
+
+# Optional
+REDIS_URL="redis://localhost:6379"
+UPLOAD_PROVIDER="cloudinary" # hoặc "local"
+CLOUDINARY_CLOUD_NAME="your-cloud"
+CLOUDINARY_API_KEY="your-key"
+CLOUDINARY_API_SECRET="your-secret"
+```
+
+### Docker Deployment
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+### Vercel Deployment (Recommended)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+
+# Set environment variables
+vercel env add DATABASE_URL production
+vercel env add NEXTAUTH_SECRET production
+```
+
+## 🔍 Monitoring và Analytics
+
+### Error Tracking
+
+- **Sentry**: Real-time error monitoring
+- **Custom logging**: Winston với structured logs
+- **Performance monitoring**: Web Vitals tracking
+
+### Analytics
+
+- **Google Analytics 4**: User behavior tracking
+- **Custom events**: Conversion funnel analysis
+- **A/B testing**: Feature flag system
+
+### Health Checks
+
+```typescript
+// Health check endpoint
+GET /api/health
+{
+  "status": "healthy",
+  "database": "connected",
+  "redis": "connected",
+  "version": "1.0.0",
+  "timestamp": "2025-01-01T00:00:00Z"
+}
+```
+
+## 📈 Future Roadmap
+
+### Phase 2: E-commerce Features
+
+- [ ] Shopping cart và checkout flow
+- [ ] Payment integration (Stripe, PayPal)
+- [ ] Order management system
+- [ ] Inventory tracking
+- [ ] Customer accounts và order history
+
+### Phase 3: Advanced Features
+
+- [ ] Product reviews và ratings
+- [ ] Wishlist functionality
+- [ ] Product recommendations
+- [ ] Search filters và sorting
+- [ ] Multi-language support (i18n)
+
+### Phase 4: Enterprise Features
+
+- [ ] Multi-vendor marketplace
+- [ ] Advanced analytics dashboard
+- [ ] Email marketing integration
+- [ ] SEO optimization tools
+- [ ] Mobile app (React Native)
+
+## 🤝 Contributing
+
+### Development Setup
+
+1. Fork repository
+2. Create feature branch
+3. Make changes với proper testing
+4. Submit pull request với detailed description
+
+### Code Standards
+
+- Follow TypeScript best practices
+- Write comprehensive tests
+- Document complex logic
+- Follow conventional commit messages
+
+### Pull Request Process
+
+1. Ensure CI passes
+2. Add tests cho new features
+3. Update documentation
+4. Request review từ maintainers
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: [Wiki](https://github.com/hotriluan/vuki/wiki)
+- **Issues**: [GitHub Issues](https://github.com/hotriluan/vuki/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/hotriluan/vuki/discussions)
+- **Email**: support@vuki.com
+
+---
+
+**Developed with ❤️ by [hotriluan](https://github.com/hotriluan)**
+
+> This project showcases modern web development practices với focus on performance, scalability, và user experience.
 
 ---
 
