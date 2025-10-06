@@ -1,19 +1,18 @@
-import { colors as tokenColors } from './src/config/tokens.cjs';
+// Keep this file in CommonJS so Tailwind CLI and Next.js can load it without ESM interop issues.
+// tokens.mjs exports `colors` – require via dynamic import fallback not needed since we stay in CJS here.
+const { colors: tokenColors } = require('./src/config/tokens.js');
+
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: 'class',
   content: [
-    './src/app/**/*.{js,ts,jsx,tsx}',
-    './src/components/**/*.{js,ts,jsx,tsx}'
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}'
   ],
   theme: {
     extend: {
       colors: {
-        brand: {
-          primary: tokenColors.brand.primary,
-          secondary: tokenColors.brand.secondary,
-          accent: tokenColors.brand.accent
-        },
+        brand: tokenColors.brand,
         gray: tokenColors.gray
       }
     }

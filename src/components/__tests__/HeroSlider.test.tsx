@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HeroSlider, type HeroSlide } from '@/components/HeroSlider';
+import { describe, it, expect } from 'vitest';
 
 const slides: HeroSlide[] = [
   { id: 's1', image: 'https://example.com/a.jpg', alt: 'A', heading: 'Slide A', subheading: 'First', ctaLabel: 'Go A', ctaHref: '/a', theme: 'dark' },

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { searchProducts, type SearchResultItem, ensureIndexLoad } from '@/lib/search';
-import { products } from '@/lib/data';
+import { getProducts } from '@/lib/data';
 import Link from 'next/link';
 
 interface SearchModalProps {
@@ -18,6 +18,7 @@ export function SearchModal({ open, onClose, debounceMs }: SearchModalProps) {
   const [active, setActive] = useState(0);
   const [visible, setVisible] = useState(open); // for mount/unmount
   const [recent, setRecent] = useState<string[]>([]);
+  const [featured, setFeatured] = useState<any[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
   const [indexReady, setIndexReady] = useState(false);
   const DEBOUNCE_MS = typeof debounceMs === 'number' ? debounceMs : 220;
@@ -170,6 +171,14 @@ export function SearchModal({ open, onClose, debounceMs }: SearchModalProps) {
     }
   }, [open, indexReady]);
 
+  // Load a small set of featured suggestions for empty-state fallback
+  useEffect(() => {
+    if (!visible) return;
+    let alive = true;
+    getProducts().then(list => { if (alive) setFeatured(list.filter((p: any) => p.featured).slice(0, 6)); });
+    return () => { alive = false; };
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
@@ -249,7 +258,7 @@ export function SearchModal({ open, onClose, debounceMs }: SearchModalProps) {
             <div className="p-4 text-sm text-gray-600 space-y-3">
               <div>No results – gợi ý nổi bật:</div>
               <div className="flex flex-col gap-2">
-                {products.filter(p => p.featured).slice(0,3).map(p => (
+                {featured.slice(0,3).map(p => (
                   <Link
                     key={p.slug}
                     href={`/product/${p.slug}`}

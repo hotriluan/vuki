@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateSession } from '@/lib/session';
 import { createOrder, OrderError } from '@/lib/orders/createOrder';
+import { withTiming } from '@/lib/apiTiming';
 
 interface OrderItemInput { productId: string; variantId?: string; quantity: number; }
 interface CreateOrderBody { items: OrderItemInput[] }
@@ -31,28 +32,30 @@ export async function POST(req: Request) {
     userId = undefined;
   }
 
-  try {
-    const result = await createOrder(items, userId);
-    return NextResponse.json({
-      id: result.orderId,
-      total: result.total,
-      currency: result.currency,
-      items: result.items,
-    }, { status: 201 });
-  } catch (e: any) {
-    if (e instanceof OrderError) {
-      const statusMap: Record<string, number> = {
-        INVALID_ITEMS: 400,
-        TOO_MANY_ITEMS: 400,
-        INVALID_PRODUCT_ID: 400,
-        INVALID_QUANTITY: 400,
-        PRODUCT_NOT_FOUND: 400,
-        VARIANT_MISMATCH: 400,
-        INSUFFICIENT_VARIANT_STOCK: 400,
-        INSUFFICIENT_PRODUCT_STOCK: 400,
-      };
-      return NextResponse.json({ error: e.code, message: e.message, meta: e.meta }, { status: statusMap[e.code] || 400 });
+  return withTiming('orders.POST', async () => {
+    try {
+      const result = await createOrder(items, userId);
+      return NextResponse.json({
+        id: result.orderId,
+        total: result.total,
+        currency: result.currency,
+        items: result.items,
+      }, { status: 201 });
+    } catch (e: any) {
+      if (e instanceof OrderError) {
+        const statusMap: Record<string, number> = {
+          INVALID_ITEMS: 400,
+          TOO_MANY_ITEMS: 400,
+          INVALID_PRODUCT_ID: 400,
+          INVALID_QUANTITY: 400,
+          PRODUCT_NOT_FOUND: 400,
+          VARIANT_MISMATCH: 400,
+          INSUFFICIENT_VARIANT_STOCK: 400,
+          INSUFFICIENT_PRODUCT_STOCK: 400,
+        };
+        return NextResponse.json({ error: e.code, message: e.message, meta: e.meta }, { status: statusMap[e.code] || 400 });
+      }
+      return NextResponse.json({ error: 'Failed to create order', detail: e.message }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Failed to create order', detail: e.message }, { status: 500 });
-  }
+  });
 }

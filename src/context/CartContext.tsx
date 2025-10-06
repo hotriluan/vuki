@@ -1,6 +1,6 @@
 "use client";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef, useCallback, useState } from 'react';
-import { products } from '@/lib/data'; // still used for pricing pipeline until service fully integrated
+import { getProducts } from '@/lib/data';
 import { ProductSchema } from '@/domain/product';
 import { Product } from '@/lib/types';
 import { cartReducer, COUPONS, type CartState, type AppliedCoupon, type CartItem } from './cartCore';
@@ -110,12 +110,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = useMemo(() => state.items.reduce((sum, i) => sum + i.quantity, 0), [state.items]);
 
-  // Compute totals directly from statically imported products (avoids dynamic require incompatibility under ESM)
+  // Lazy in-memory product cache (client) for pricing calculations
+  const [productCache, setProductCache] = useState<any[]>([]);
+  useEffect(() => {
+    let alive = true;
+    // Only load once when there are items
+    if (productCache.length === 0 && state.items.length > 0) {
+      getProducts().then(p => { if (alive) setProductCache(p as any); });
+    }
+    return () => { alive = false; };
+  }, [state.items.length, productCache.length]);
+
   const pricing = useMemo(() => {
     const province = state.checkout?.province;
     const base = getProvinceShippingBase(province);
-    return computeTotals(state, products, { baseShipping: base, vatEnabled: vatEnabledState, vatRate: VAT_RATE });
-  }, [state, vatEnabledState]);
+    return computeTotals(state, productCache, { baseShipping: base, vatEnabled: vatEnabledState, vatRate: VAT_RATE });
+  }, [state, vatEnabledState, productCache]);
   const { subtotal, discountAmount, shippingFee, tax, total } = pricing;
 
   // Emit event khi pricing thay đổi
@@ -146,7 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setCheckout = useCallback((data: Partial<{ name: string; email: string; address: string }>) => {
     dispatch({ type: 'SET_CHECKOUT', checkout: data });
-  }, []);
+  }, [dispatch]);
 
   const value = useMemo(
     () => ({
@@ -186,7 +196,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       vatEnabled: vatEnabledState,
       isCheckoutReady
     }),
-    [state, totalItems, shippingFee, discountAmount, subtotal, total, tax, vatEnabledState, isCheckoutReady, applyCoupon, removeCoupon, setCheckout]
+  [state, totalItems, shippingFee, discountAmount, subtotal, total, tax, vatEnabledState, isCheckoutReady, applyCoupon, removeCoupon, setCheckout]
   );
   return (
     <CartContext.Provider value={value}>

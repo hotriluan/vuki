@@ -1,5 +1,5 @@
-// JS shim generated for Tailwind (build-time). Keep in sync with tokens.ts
-export const colors = {
+// CommonJS tokens file (single source). Keep in sync with any future design token definitions.
+module.exports.colors = {
   brand: {
     primary: '#1e3a8a',
     secondary: '#f59e0b',

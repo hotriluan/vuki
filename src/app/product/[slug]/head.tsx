@@ -3,13 +3,13 @@ import { buildCanonical, formatPriceForMeta, productDescription } from '@/lib/se
 
 interface Props { params: { slug: string } }
 
-export default function Head({ params }: Props) {
-  const product = findProductBySlug(params.slug);
-  if (!product) return null;
-  const price = formatPriceForMeta(product);
+export default async function Head({ params }: Props) {
+  const product = await findProductBySlug(params.slug);
+  if (!product) return null as any;
+  const price = formatPriceForMeta(product as any);
   const canonical = buildCanonical(`/product/${product.slug}`);
-  const description = productDescription(product);
-  const images = product.images?.length ? product.images : [];
+  const description = productDescription(product as any);
+  const images = (product as any).images?.length ? (product as any).images : [];
   return (
     <>
       {/* Override / add product-specific OG tags */}

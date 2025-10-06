@@ -9,30 +9,46 @@ let fuseInstance: any = null;
 let fusePromise: Promise<any> | null = null;
 let indexData: UnifiedIndexItem[] | null = null;
 let indexPromise: Promise<UnifiedIndexItem[]> | null = null;
+let indexVersion: string | null = null;
 
 async function buildInMemoryIndex(): Promise<UnifiedIndexItem[]> {
   // Lazy import to avoid cost if file exists
   try {
-    const { products } = await import('./data');
+  // Attempt to fetch active products (non-deleted) from DB first
+  let products: any[] = [];
+  try {
+    const { prisma } = await import('./prisma');
+    const now = new Date();
+    const { activeProductWhere } = await import('./productVisibility');
+    products = await (prisma as any).product.findMany({
+      where: activeProductWhere(now),
+      orderBy: { createdAt: 'desc' },
+      take: 1500
+    });
+  } catch {
+    // Fallback to static import (may include legacy items)
+    const mod: any = await import('./data');
+    products = mod.products || [];
+  }
     let blogPosts: any[] = [];
-    try {
-      const blog = await import('./blog');
-      blogPosts = (blog.getAllPosts ? blog.getAllPosts() : []).map((b: any) => ({
-        id: `blog:${b.slug}`,
-        type: 'blog' as const,
-        name: b.title,
-        description: (b.excerpt || '').slice(0, 400),
-        slug: b.slug
-      }));
-      // Retry một lần nếu rỗng nhưng có thư mục posts (tránh timing cache rỗng ban đầu)
-      if (blogPosts.length === 0) {
-        try {
-          if (typeof process !== 'undefined') {
+    // Chỉ import blog khi chạy server-side để tránh bundler client kéo theo 'fs'
+    if (typeof window === 'undefined') {
+      try {
+        const blog = await import('./blog');
+        blogPosts = (blog.getAllPosts ? blog.getAllPosts() : []).map((b: any) => ({
+          id: `blog:${b.slug}`,
+          type: 'blog' as const,
+          name: b.title,
+          description: (b.excerpt || '').slice(0, 400),
+          slug: b.slug
+        }));
+        // Retry một lần nếu rỗng nhưng có thư mục posts (tránh timing cache rỗng ban đầu)
+        if (blogPosts.length === 0) {
+          try {
             const path = await import('path');
-            const fs = await import('fs');
+            const fsMod = await (0, eval)('import("fs")');
             const postsDir = path.join(process.cwd(), 'content', 'posts');
-            if (fs.existsSync(postsDir)) {
-              // Invalidate cache nếu lib hỗ trợ
+            if (fsMod.existsSync(postsDir)) {
               if (typeof (blog as any).__resetBlogCache === 'function') {
                 (blog as any).__resetBlogCache();
                 const retry = blog.getAllPosts ? blog.getAllPosts() : [];
@@ -45,21 +61,21 @@ async function buildInMemoryIndex(): Promise<UnifiedIndexItem[]> {
                 }));
               }
             }
-          }
-        } catch {}
+          } catch {}
+        }
+      } catch {
+        // blog optional
       }
-    } catch (e) {
-      // blog optional
     }
     // Nếu vẫn rỗng, không block index – vẫn trả product records.
-    const productRecords: UnifiedIndexItem[] = products.map((p: any) => ({
-      id: p.id,
-      type: 'product',
-      name: p.name,
-      description: String(p.description || '').slice(0, 400),
-      slug: p.slug,
-      featured: !!p.featured
-    }));
+  const productRecords: UnifiedIndexItem[] = products.map((p: any) => ({
+    id: p.id,
+    type: 'product',
+    name: p.name,
+    description: String(p.description || '').slice(0, 400),
+    slug: p.slug,
+    featured: !!p.featured
+  }));
     return [...productRecords, ...blogPosts];
   } catch (e) {
     return [];
@@ -73,11 +89,17 @@ async function loadIndex(): Promise<UnifiedIndexItem[]> {
     if (!indexPromise) {
       indexPromise = (async (): Promise<UnifiedIndexItem[]> => {
         try {
-          const fs = await import('fs/promises');
+          // Use eval indirection so bundler (client) doesn't try to include 'fs'
+          const fs = await (0, eval)('import("fs/promises")');
           const path = await import('path');
           const filePath = path.join(process.cwd(), 'public', 'search-index.json');
           const raw = await fs.readFile(filePath, 'utf8');
           indexData = JSON.parse(raw);
+          try {
+            const metaRaw = await fs.readFile(path.join(process.cwd(), 'public', 'search-index.meta.json'), 'utf8');
+            const meta = JSON.parse(metaRaw);
+            if (meta?.version) indexVersion = meta.version;
+          } catch {}
           if (!Array.isArray(indexData) || indexData.length === 0) {
             // build in-memory if empty
             indexData = await buildInMemoryIndex();
@@ -149,6 +171,10 @@ export interface SearchResultItem {
 
 export async function ensureIndexLoad() {
   await loadIndex();
+}
+
+export function getIndexVersion() {
+  return indexVersion;
 }
 
 export async function searchProducts(query: string, limit = 8): Promise<SearchResultItem[]> {

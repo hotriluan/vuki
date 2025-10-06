@@ -11,11 +11,17 @@ export function RecentlyViewed() {
     const entries = getRecentlyViewed();
     setIds(entries.map(e => e.id));
   }, []);
-  if (ids.length === 0) return null;
-  const products = ids
-    .map(id => findProductById(id))
-    .filter(Boolean) as NonNullable<ReturnType<typeof findProductById>>[];
-  if (products.length === 0) return null;
+  const [products, setProducts] = useState<any[]>([]);
+  useEffect(() => {
+    if (ids.length === 0) { setProducts([]); return; }
+    let alive = true;
+    Promise.all(ids.map(id => findProductById(id))).then(res => {
+      if (!alive) return;
+      setProducts(res.filter(Boolean));
+    });
+    return () => { alive = false; };
+  }, [ids]);
+  if (ids.length === 0 || products.length === 0) return null;
   return (
     <section className="mt-16">
       <h2 className="text-lg font-semibold mb-4">Recently viewed</h2>

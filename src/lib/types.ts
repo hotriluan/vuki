@@ -14,7 +14,10 @@ export interface Product {
   salePrice?: number; // discounted price
   categoryIds: string[];
   images: string[];
+  primaryImage?: string | null;
   featured?: boolean;
+  status?: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
+  publishedAt?: string | null; // ISO date when product is (or will be) publicly visible
   createdAt: string;
   variants?: Array<{
     id: string; // unique per product

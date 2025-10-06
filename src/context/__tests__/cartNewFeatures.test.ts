@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeTotals, COUPONS, type CartState } from '../cartCore';
-import { products } from '@/lib/data';
+import { products } from '@/lib/__legacyTestStubs';
 
 describe('New cart pricing features', () => {
   it('expired coupon would discount but app layer blocks it', () => {

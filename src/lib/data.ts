@@ -1,80 +1,70 @@
-import { Category, Product } from './types';
+import { prisma } from '@/lib/prisma';
+import { activeProductWhere } from './productVisibility';
+import type { Category, Product } from './types';
 
-export const categories: Category[] = [
-  { id: 'c-sneakers', name: 'Sneakers', slug: 'sneakers' },
-  { id: 'c-boots', name: 'Boots', slug: 'boots' },
-  { id: 'c-accessories', name: 'Accessories', slug: 'accessories' },
-  { id: 'c-limited', name: 'Limited', slug: 'limited' }
-];
+// Public-facing helpers must exclude soft-deleted products (deletedAt NOT NULL)
+// Admin area should explicitly include deleted items if needed.
 
-export const products: Product[] = [
-  {
-    id: 'p-1',
-    name: 'Urban Runner White',
-    slug: 'urban-runner-white',
-    description: 'Lightweight everyday sneaker with breathable mesh and cushioned sole.',
-    price: 1590000,
-    salePrice: 1290000,
-    categoryIds: ['c-sneakers'],
-  images: ['https://images.unsplash.com/photo-1519744792095-2f2205e87b6f?auto=format&fit=crop&w=800&q=60'],
-    featured: true,
-    createdAt: new Date().toISOString(),
-    variants: [
-      { id: 'sz-39', label: 'Size 39', stock: 10 },
-      { id: 'sz-40', label: 'Size 40', stock: 8 },
-      { id: 'sz-41', label: 'Size 41', stock: 5, priceDiff: 20_000 },
-      { id: 'sz-42', label: 'Size 42', stock: 0, priceDiff: 20_000 }
-    ]
-  },
-  {
-    id: 'p-2',
-    name: 'Trail Explorer',
-    slug: 'trail-explorer',
-    description: 'Durable outdoor shoe designed for mixed terrain with reinforced toe.',
-    price: 1890000,
-    salePrice: 1590000,
-    categoryIds: ['c-boots'],
-    images: ['https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=800&q=60'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'p-3',
-    name: 'Minimalist Leather Boot',
-    slug: 'minimalist-leather-boot',
-    description: 'Premium full-grain leather boot with clean lines and stitched sole.',
-    price: 2350000,
-    categoryIds: ['c-boots'],
-    images: ['https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=800&q=60'],
-    featured: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'p-4',
-    name: 'Performance Sock',
-    slug: 'performance-sock',
-    description: 'Moisture-wicking breathable sock engineered for comfort.',
-    price: 99000,
-    salePrice: 79000,
-    categoryIds: ['c-accessories'],
-    images: ['https://images.unsplash.com/photo-1600180758890-c8d3a5d35a5d?auto=format&fit=crop&w=800&q=60'],
-    createdAt: new Date().toISOString()
-  }
-];
-
-export function findProductBySlug(slug: string) {
-  return products.find(p => p.slug === slug);
+export async function getCategories(): Promise<Category[]> {
+  return prisma.category.findMany();
 }
 
-export function findCategoryBySlug(slug: string) {
-  return categories.find(c => c.slug === slug);
+export async function getProducts(): Promise<Product[]> {
+  // Only return non-deleted and published (or scheduled already active) products
+  const now = new Date();
+    return (prisma as any).product.findMany({
+      where: activeProductWhere(now),
+       include: { categories: true, variants: true, media: { orderBy: { position: 'asc' } } }
+    }).then((rows: any[]) => rows.map(r => ({
+      ...r,
+      primaryImage: r.primaryImage || (r.media?.find((m: any) => m.isPrimary)?.url) || (Array.isArray(r.images) ? r.images[0] : null)
+    }))) as any;
 }
 
-export function productsByCategorySlug(slug: string) {
-  const category = findCategoryBySlug(slug);
+export async function findProductBySlug(slug: string) {
+  const now = new Date();
+    return (prisma as any).product.findFirst({
+      where: { ...activeProductWhere(now), slug },
+      include: { categories: true, variants: true, media: { orderBy: { position: 'asc' } } }
+    }).then((r: any) => r && {
+      ...r,
+      primaryImage: r.primaryImage || (r.media?.find((m: any) => m.isPrimary)?.url) || (Array.isArray(r.images) ? r.images[0] : null)
+    }) as any;
+}
+
+export async function findCategoryBySlug(slug: string) {
+  return prisma.category.findUnique({ where: { slug } });
+}
+
+export async function productsByCategorySlug(slug: string) {
+  const category = await prisma.category.findUnique({ where: { slug } });
   if (!category) return [];
-  return products.filter(p => p.categoryIds.includes(category.id));
+  const now = new Date();
+    return (prisma as any).product.findMany({
+      where: { ...activeProductWhere(now), categories: { some: { categoryId: category.id } } },
+      include: { categories: true, variants: true, media: { orderBy: { position: 'asc' } } }
+    }).then((rows: any[]) => rows.map(r => ({
+      ...r,
+      primaryImage: r.primaryImage || (r.media?.find((m: any) => m.isPrimary)?.url) || (Array.isArray(r.images) ? r.images[0] : null)
+    }))) as any;
 }
 
-export function findProductById(id: string) {
-  return products.find(p => p.id === id);
+export async function findProductById(id: string) {
+  const now = new Date();
+    return (prisma as any).product.findFirst({
+      where: { ...activeProductWhere(now), id },
+      include: { categories: true, variants: true, media: { orderBy: { position: 'asc' } } }
+    }).then((r: any) => r && {
+      ...r,
+      primaryImage: r.primaryImage || (r.media?.find((m: any) => m.isPrimary)?.url) || (Array.isArray(r.images) ? r.images[0] : null)
+    }) as any;
+}
+
+// Explicit helper for admin to fetch even soft-deleted if necessary
+export async function adminFindProductById(id: string) {
+  return prisma.product.findUnique({ where: { id }, include: { categories: true, variants: true } }) as any;
+}
+
+export async function adminListAllProducts() {
+  return prisma.product.findMany({ include: { categories: true, variants: true } }) as any;
 }

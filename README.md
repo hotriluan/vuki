@@ -6,7 +6,229 @@
 
 > Badge đã trỏ tới repo thật. Nếu Codecov chưa hiển thị %, đảm bảo workflow chạy ít nhất một lần trên nhánh `main`.
 
+## ⚡ Quickstart (Remote MySQL)
+
+1. Tạo database (trên server MySQL 8.x):
+
+```sql
+CREATE DATABASE IF NOT EXISTS vuki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. Tạo file `.env` (dựa trên `.env.example`):
+
+```bash
+DATABASE_URL=mysql://root:yourPass@192.168.18.33:3306/vuki
+ADMIN_SECRET=change-me                 # dùng cho endpoint rebuild search cũ
+NEXTAUTH_SECRET=your-long-random-hex   # tạo bằng: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Tuỳ chọn seed admin (scripts/seed-admin.mjs)
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=Admin@123
+ADMIN_NAME=Admin
+LOG_LEVEL=info
+```
+
+3. Cài dependencies:
+
+```bash
+npm ci
+```
+
+4. Generate & migrate (nếu chưa có DB schema):
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+# Nếu đã tồn tại schema cũ trước khi thêm field role: chạy
+# npx prisma migrate dev --name add-user-role
+```
+
+5. Seed dữ liệu & đồng bộ (blog + search index) – nhiều bước này chạy tự động ở predev nhưng có thể gọi thủ công:
+
+```bash
+npm run db:seed                           # seed cơ bản (nếu có)
+node scripts/migrate-products-to-db.mjs   # import products JSON vào DB (idempotent)
+node scripts/seed-admin.mjs               # tạo / cập nhật user admin (role=ADMIN)
+node scripts/sync-blog.mjs
+node scripts/build-unified-search-index.mjs
+```
+
+6. Kiểm tra kết nối DB nhanh:
+
+```bash
+npm run db:check
+```
+
+7. Chạy dev:
+
+```bash
+npm run dev
+```
+
+8. Rebuild search index (admin):
+
+```bash
+curl -X POST http://localhost:3000/api/admin/rebuild-search -H "x-admin-secret: change-me"
+```
+
+Rate limit mặc định:
+
+- Public (`/api/search`, `/api/orders`): 60 req / 5 phút / IP (env: `PUBLIC_RATE_LIMIT`, `PUBLIC_RATE_WINDOW_MS`)
+- Admin rebuild: 5 req / 5 phút / IP (env: `ADMIN_REBUILD_LIMIT`, `ADMIN_REBUILD_WINDOW_MS`)
+
 Một boilerplate cửa hàng bán giày (demo) sử dụng Next.js 14 (App Router) + TypeScript + Tailwind CSS.
+
+## ✅ Phase 1 Backend Completion (v0.4.0)
+
+Phase 1 đã hoàn tất với trọng tâm biến prototype storefront thành nền tảng có admin backend thực thi chuẩn chỉnh:
+
+### Phạm vi chính
+
+- Product lifecycle: trạng thái `DRAFT | PUBLISHED | SCHEDULED` + `publishedAt` (lên lịch xuất bản) và lọc soft delete (`deletedAt`).
+- Media system: bảng `ProductMedia` (ordering, `isPrimary`, alt text bắt buộc cho primary) + fallback chain (`primaryImage` → media primary → ảnh đầu tiên).
+- Variants: full-replace variant matrix API (xoá rồi insert lại atomically) + audit variant counts.
+- Bulk operations: publish / unpublish / soft delete (cascades variants hard delete) kèm diff audit & cache invalidation hợp nhất.
+- Slug handling: tạo tự động từ tên, gợi ý slug khi xung đột (409) cả create & edit.
+- Product duplication: deep copy (sản phẩm + variants + media + categories) về bản DRAFT mới, slug mới.
+- Optimistic concurrency: kiểm tra `updatedAt` trước update (409 trả về snapshot hiện tại để reconcile UI).
+- Audit logging: diff trước/sau thay đổi field, variant delta, bulk status transitions, duplicate, search rebuild.
+- Validation warnings API: bề mặt cảnh báo admin (thiếu alt primary, lịch publish quá khứ, draft chưa có category, thiếu primary image, v.v.).
+- Unified cache invalidation: gom toàn bộ revalidate product page, category pages, homepage, sitemap + trigger rebuild chỉ mục search nền.
+- Performance & LCP: ưu tiên ảnh hero/primary, dynamic import khối nặng (reviews / related / recently viewed), deferred wishlist hydrate, tinh chỉnh thuộc tính `sizes`.
+
+### Kiến trúc kỹ thuật nổi bật
+
+- Prisma schema mở rộng: trường trạng thái, lịch publish, soft delete, bảng media được index cho truy vấn hiệu quả.
+- Tách helpers: `lib/invalidate.ts`, `lib/slug.ts`, `lib/audit.ts` chuẩn hoá reuse & giảm drift.
+- Search index hợp nhất (products + blog) rebuild nền với rate limit & secret header.
+- All mutation endpoints → audit + invalidation + optional diff meta ở cùng một vị trí (ít lặp, dễ review).
+- Strict alt text policy cho primary image nâng cao SEO & accessibility.
+
+### Lợi ích vận hành
+
+- Giảm rủi ro ghi đè: concurrency guard.
+- Dễ truy vết lỗi / chỉnh sửa nhầm: audit diff chi tiết.
+- Triển khai mở rộng (restore, versioning media) dễ dàng do schema & logging đã chuẩn bị.
+- Nền tảng hiệu năng tốt: tránh hydrate không cần thiết & tách bundle.
+
+### Bảng tính năng Phase 1 (tóm tắt)
+
+| Nhóm                                  | Trạng thái | Ghi chú                                                |
+| ------------------------------------- | ---------- | ------------------------------------------------------ |
+| Product status & scheduling           | DONE       | Enum + lọc query + publishAt validate                  |
+| Product media & primary               | DONE       | Alt bắt buộc primary + ordering                        |
+| Variant matrix replace                | DONE       | Ghi nhận diff variantCountBefore/After                 |
+| Bulk publish/unpublish/delete         | DONE       | Cascade xoá cứng variants khi soft delete              |
+| Slug auto & suggestion                | DONE       | Suggest slug trên 409 (P2002)                          |
+| Duplicate product                     | DONE       | Deep copy quan hệ, DRAFT mới                           |
+| Soft delete cascade                   | DONE       | Hard delete variants, giữ orderItems                   |
+| Optimistic concurrency                | DONE       | 409 + payload snapshot                                 |
+| Audit diff logging                    | DONE       | Field-level & bulk summaries                           |
+| Validation warnings API               | DONE       | Missing alt, invalid schedule, no category, no primary |
+| Unified invalidation + search rebuild | DONE       | Revalidate path + background index                     |
+| LCP optimizations                     | DONE       | Priority images + dynamic imports                      |
+
+## 🔭 Roadmap Gợi Ý Sau Phase 1
+
+- Product restore (`deletedAt = null`) + audit `product.restore`.
+- Pagination & server filtering (products, orders, logs) + cursor khi lớn.
+- Bundle size guard (size-limit CI) + Lighthouse CI baseline.
+- Media alt bulk suggestion (AI hoặc heuristic) + xuất báo cáo thiếu alt.
+- Search nâng cao: synonyms, accent-insensitive normalization, popularity boost.
+- Advanced RBAC (roles granular hoặc permissions) & activity viewer UI cho audit diff.
+- Rate limit fine-grained cho create/update/delete endpoint.
+
+---
+
+## 🛠️ Admin Features Overview
+
+| Nhóm       | Route chính            | Hành động                                                                     | Ghi chú                                                                                 |
+| ---------- | ---------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| Dashboard  | `/admin`               | Thống kê đơn hàng (tổng, items, revenue PAID/FULFILLED), rebuild search index | Form rebuild sử dụng secret `ADMIN_SECRET` (sẽ dần thay thế bằng kiểm tra role + audit) |
+| Products   | `/admin/products`      | List, create, edit, soft delete                                               | Soft delete đặt `deletedAt`; chưa có restore UI (dự kiến `product.restore`)             |
+| Variants   | Trong form create/edit | Nhập theo dòng: `Label                                                        | Stock                                                                                   | PriceDiff?` | PriceDiff là chênh lệch so với giá gốc (VND), bỏ trống nếu không có |
+| Categories | `/admin/categories`    | CRUD danh mục + đếm sản phẩm liên kết                                         | Join table `ProductCategory`; xoá cascade giữ dữ liệu sạch                              |
+| Orders     | `/admin/orders`        | Xem, lọc theo status, cập nhật status                                         | Audit: `order.status.update`; doanh thu tính theo PAID + FULFILLED                      |
+| Users      | `/admin/users`         | Xem danh sách, promote/demote role                                            | Bảo vệ không hạ ADMIN cuối cùng; audit `user.role.update`                               |
+| Audit Logs | `/admin/logs`          | Xem 50 log gần nhất + filter action + tìm meta (client)                       | Hiển thị JSON meta, dropdown action distinct, future pagination >50                     |
+
+### Soft Delete Sản Phẩm
+
+- Trường: `deletedAt: DateTime?` (+ index)
+- Tầng data public (helpers `lib/data.ts`, search index builder, related, product service) tự động loại trừ sản phẩm đã xóa mềm (`deletedAt IS NOT NULL`).
+- Admin có thể thêm helper riêng nếu cần xem cả deleted (hiện chưa có trang liệt kê deleted).
+- Xóa mềm giữ nguyên variants & orderItems để bảo toàn lịch sử đơn hàng.
+- Khôi phục (restore) chưa có UI – kế hoạch: endpoint đặt `deletedAt = null` + audit `product.restore`.
+
+### Định Dạng Variants
+
+Textarea mỗi dòng: `Label|Stock|PriceDiff?`
+
+Ví dụ:
+
+```
+Size 39|10
+Size 40|8|20000
+Size 41|5|25000
+```
+
+PriceDiff (nếu có) cộng vào giá gốc khi hiển thị.
+
+### Users Management
+
+- Toggle role USER ⇄ ADMIN qua nút (confirm)
+- Chặn tự hạ quyền nếu là ADMIN duy nhất
+- Endpoint: `POST /api/admin/users/:id/role` body `{ role: 'USER' | 'ADMIN' }`
+
+### Audit Logging
+
+File: `src/lib/audit.ts`
+
+Actions hiện ghi (đã có viewer `/admin/logs`):
+
+```
+product.create | product.update | product.delete | product.restore (dự kiến)
+category.create | category.update | category.delete
+order.status.update
+user.role.update
+search.rebuild
+```
+
+Trường `meta` (JSON) có thể chứa: `by`, `target`, `ip`, v.v.
+Lỗi khi ghi audit bị nuốt (console.error) để không phá luồng chính.
+
+### Orders Metrics
+
+- Tổng số đơn, tổng items (sum quantity), doanh thu: cộng các đơn status PAID + FULFILLED.
+- Có filter status qua query param (ví dụ `?status=PAID`).
+
+### Bảo Mật & Quy Ước
+
+- Chỉ ADMIN truy cập `/admin/*` (middleware decode JWT, kiểm tra `role`).
+- Đổi `NEXTAUTH_SECRET` khi triển khai production.
+- Không truyền path con vào `NEXTAUTH_URL` (luôn là origin).
+
+### Roadmap Admin (Cập nhật)
+
+1. Product restore (API + UI + audit).
+2. Pagination & search back-office (products, orders, logs paging >50).
+3. Xuất CSV đơn hàng.
+4. Inline variant stock editing.
+5. Rate limit + lockout login.
+
+### Product Form UX (Mới)
+
+- Form tạo & sửa sản phẩm chuyển sang client component (fetch POST) → hiển thị lỗi slug trùng inline (status 409) thay vì reload.
+- Tự sinh slug từ tên nếu bỏ trống (blur name lần đầu).
+- Nút submit hiển thị trạng thái (Đang tạo... / Đang lưu...).
+- Bảo toàn logic slugify & kiểm tra server (tránh race condition / P2002 fallback).
+
+### Search & Related Nhận Biết Soft Delete
+
+- Search index build ưu tiên dữ liệu từ DB `where deletedAt IS NULL`; fallback static JSON chỉ khi DB không khả dụng.
+- Runtime Fuse search cũng thử DB trước; nếu rỗng/lỗi mới fallback.
+- Related products load danh sách active từ DB; không hiển thị sản phẩm đã soft delete.
+
+---
 
 ## Offline Fallback (PWA)
 
@@ -1090,3 +1312,129 @@ includeMatches: true
 
 - Giảm kích thước bundle vì không bundle full `products` vào Fuse build client ban đầu.
 - Index fetch dùng `cache: force-cache` → browser có thể reuse cho các lần mở sau.
+
+---
+
+## 🔐 Auth & Admin (NextAuth + Prisma)
+
+Hệ thống đăng nhập đã tích hợp `next-auth` (Credentials Provider) + Prisma `User` model mở rộng có `role` (enum: `USER | ADMIN`).
+
+### Schema mở rộng
+
+```prisma
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+  sessions     Session[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+Nếu thêm `role` sau khi DB đã tồn tại: chạy `npx prisma migrate dev --name add-user-role`.
+
+### Cấu hình NextAuth
+
+File: `src/app/api/auth/[...nextauth]/route.ts` dùng Credentials provider:
+
+```ts
+import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
+// authorize: kiểm tra email + bcrypt.compare(passwordHash)
+// callbacks.jwt: token.role
+// callbacks.session: session.user.role
+```
+
+Biến môi trường tối thiểu:
+
+```
+NEXTAUTH_SECRET=... # JWT sign
+```
+
+### Seed admin user
+
+Script: `scripts/seed-admin.mjs` (idempotent upsert):
+
+```bash
+node scripts/seed-admin.mjs
+```
+
+Tùy chỉnh qua ENV: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`.
+
+Tạo secret ngẫu nhiên:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### Middleware bảo vệ /admin
+
+File: `src/middleware.ts` – dùng `getToken` từ `next-auth/jwt` kiểm tra `token.role === 'ADMIN'`.
+Nếu không đạt → redirect `/auth/login?from=/admin/...`.
+
+### Trang Login
+
+`/auth/login` form POST credentials đến NextAuth. Nếu đang đăng nhập → redirect `/admin`.
+
+### Admin Dashboard & CRUD
+
+| Route                       | Mục đích           |
+| --------------------------- | ------------------ |
+| `/admin`                    | Tổng quan          |
+| `/admin/products`           | Danh sách sản phẩm |
+| `/admin/products/create`    | Tạo mới            |
+| `/admin/products/[id]/edit` | Chỉnh sửa          |
+
+Create/Edit dùng form POST tới các API route:
+
+- POST `/api/admin/products/create`
+- POST `/api/admin/products/[id]/edit`
+
+### Di chuyển dữ liệu sản phẩm JSON → DB
+
+Script: `scripts/migrate-products-to-db.mjs` đọc `src/lib/products.json` và upsert vào bảng `Product` + join `ProductCategory` + `ProductVariant`.
+
+```bash
+node scripts/migrate-products-to-db.mjs
+```
+
+Sau khi xác nhận dữ liệu đã tồn tại hoàn toàn trong DB, module `src/lib/data.ts` đã refactor sang Prisma nên có thể xoá file JSON nếu không cần giữ làm tham chiếu.
+
+### Hàm dữ liệu hiện tại
+
+| Hàm                        | Chức năng                                    |
+| -------------------------- | -------------------------------------------- |
+| `getProducts()`            | Trả về list sản phẩm + categories + variants |
+| `findProductBySlug()`      | Lấy một sản phẩm theo slug                   |
+| `productsByCategorySlug()` | Lọc sản phẩm theo slug category              |
+| `getCategories()`          | Danh sách category                           |
+
+### Mở rộng đề xuất
+
+1. Thêm trang quản lý category (`/admin/categories`).
+2. Xoá mềm sản phẩm (`deletedAt` + filter).
+3. Pagination server-side (skip/take) cho danh sách lớn.
+4. Upload ảnh (S3/Cloudinary) thay vì URL.
+5. OAuth providers (Google) + whitelist email cấp role ADMIN.
+6. Quên mật khẩu: token reset (email OTP).
+
+### Bảo mật
+
+| Thành phần         | Hiện tại           | Gợi ý production                |
+| ------------------ | ------------------ | ------------------------------- |
+| Hash mật khẩu      | bcrypt (10 rounds) | Có thể tăng 12 nếu CPU cho phép |
+| Chiến lược session | JWT stateless      | DB sessions nếu cần revoke      |
+| Rate limit admin   | Chỉ rebuild index  | Thêm limit create/edit/delete   |
+| CSRF               | Form credentials   | Giữ bật (NextAuth mặc định)     |
+| Logging            | pino               | Không log password/email        |
+
+---

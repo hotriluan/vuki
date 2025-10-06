@@ -57,3 +57,10 @@ model OrderItem {
   unitPrice Int
   createdAt DateTime @default(now())
 }
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  meta      Json
+  createdAt DateTime @default(now())
+}

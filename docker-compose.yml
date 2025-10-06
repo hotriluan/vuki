@@ -1,0 +1,23 @@
+version: '3.9'
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: vuki-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: vuki
+    ports:
+      - '3306:3306'
+    command:
+      [
+        'mysqld',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+      ]
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-proot']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

@@ -11,11 +11,11 @@ export type CategoryParsed = z.infer<typeof CategorySchema>;
 
 // Variant schema – either overridePrice OR priceDiff may appear (both optional)
 export const VariantSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1).optional(), // DB may not include id for newly parsed variants
   label: z.string().min(1),
-  priceDiff: z.number().int().nonnegative().optional(),
+  priceDiff: z.number().int().optional().nullable(),
   overridePrice: z.number().int().nonnegative().optional(),
-  stock: z.number().int().nonnegative().optional()
+  stock: z.number().int().nonnegative().optional().nullable()
 });
 export type VariantParsed = z.infer<typeof VariantSchema>;
 
@@ -25,11 +25,21 @@ export const ProductSchema = z.object({
   slug: z.string().min(1),
   description: z.string().min(1),
   price: z.number().int().nonnegative(),
-  salePrice: z.number().int().nonnegative().optional(),
-  categoryIds: z.array(z.string().min(1)).min(1),
-  images: z.array(z.string().url()).min(1),
+  salePrice: z.number().int().nonnegative().nullable().optional(),
+  // Some code paths may not set categoryIds; allow empty + compute elsewhere
+  categoryIds: z.array(z.string().min(1)).optional(),
+  images: z.array(z.string()).min(1), // allow relative or non-URL dev paths
+  primaryImage: z.string().min(1).optional().nullable(),
   featured: z.boolean().optional(),
-  createdAt: z.string().refine(v => !Number.isNaN(Date.parse(v)), 'createdAt must be ISO date'),
+  status: z.enum(['DRAFT','PUBLISHED','SCHEDULED']).optional(),
+  publishedAt: z.union([
+    z.string().refine(v => !v || !Number.isNaN(Date.parse(v)), 'publishedAt must be ISO date'),
+    z.date()
+  ]).nullable().optional(),
+  createdAt: z.union([
+    z.string().refine(v => !Number.isNaN(Date.parse(v)), 'createdAt must be ISO date'),
+    z.date()
+  ]),
   variants: z.array(VariantSchema).optional()
 });
 export type ProductParsed = z.infer<typeof ProductSchema>;

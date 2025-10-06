@@ -1,4 +1,4 @@
-import { products } from '@/lib/data';
+import { getProducts, findProductBySlug, findProductById } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { getRelatedProducts } from '@/lib/related';
 import { ProductService } from './productService';
@@ -18,22 +18,38 @@ function normalize(productsIn: Product[]): Product[] {
   return productsIn;
 }
 
-const normalized = normalize(products);
+let cached: Product[] | null = null;
+async function load(): Promise<Product[]> {
+  if (cached) return cached;
+  try {
+    const rows = await getProducts(); // already excludes soft-deleted
+    cached = normalize(rows as any);
+    return cached;
+  } catch {
+    cached = [];
+    return cached;
+  }
+}
 
 export class MockProductService implements ProductService {
-  async list(): Promise<Product[]> {
-    return normalized;
-  }
+  async list(): Promise<Product[]> { return load(); }
   async getBySlug(slug: string): Promise<Product | null> {
-    return normalized.find(p => p.slug === slug) || null;
+    const direct = await findProductBySlug(slug);
+    if (direct) return direct as any;
+    const all = await load();
+    return all.find(p => p.slug === slug) || null;
   }
   async getById(id: string): Promise<Product | null> {
-    return normalized.find(p => p.id === id) || null;
+    const direct = await findProductById(id);
+    if (direct) return direct as any;
+    const all = await load();
+    return all.find(p => p.id === id) || null;
   }
   async search(query: string, limit = 20): Promise<Product[]> {
     const q = query.trim().toLowerCase();
     if (q.length < 2) return [];
-    return normalized.filter(p => (
+    const all = await load();
+    return all.filter((p: Product) => (
       p.name.toLowerCase().includes(q) ||
       p.description.toLowerCase().includes(q) ||
       p.slug.toLowerCase().includes(q)

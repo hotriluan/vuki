@@ -55,11 +55,20 @@ export async function createOrder(items: OrderItemInput[], userId?: string): Pro
   }
 
   const created = await prisma.$transaction(async (tx: any) => {
+    // Atomic conditional decrements to avoid oversell (affected row count check)
     for (const it of clean) {
       if (it.variantId) {
-        await tx.productVariant.update({ where: { id: it.variantId }, data: { stock: { decrement: it.quantity } } });
+        const res = await tx.productVariant.updateMany({
+          where: { id: it.variantId, stock: { gte: it.quantity } },
+          data: { stock: { decrement: it.quantity } }
+        });
+        if (res.count === 0) throw new OrderError('INSUFFICIENT_VARIANT_STOCK', 'Insufficient variant stock (race)', { variantId: it.variantId });
       } else {
-        await tx.product.update({ where: { id: it.productId }, data: { stock: { decrement: it.quantity } } });
+        const res = await tx.product.updateMany({
+          where: { id: it.productId, stock: { gte: it.quantity } },
+          data: { stock: { decrement: it.quantity } }
+        });
+        if (res.count === 0) throw new OrderError('INSUFFICIENT_PRODUCT_STOCK', 'Insufficient product stock (race)', { productId: it.productId });
       }
     }
     const order = await tx.order.create({ data: { total, userId } });

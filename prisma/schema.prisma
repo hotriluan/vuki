@@ -27,13 +27,48 @@ model Product {
   price       Int
   salePrice   Int?
   featured    Boolean           @default(false)
+  status      ProductStatus     @default(PUBLISHED)
+  publishedAt DateTime?         @map("published_at")
+  primaryImage String?          @db.VarChar(500)
   images      Json
   stock       Int               @default(0)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?         @db.Timestamp(6)
   categories  ProductCategory[]
   variants    ProductVariant[]
   orderItems  OrderItem[]
+  media       ProductMedia[]
+
+  @@index([deletedAt])
+  @@index([status, publishedAt])
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
+model ProductMedia {
+  id         String       @id @default(cuid())
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  url        String       @db.VarChar(1000)
+  alt        String?      @db.VarChar(500)
+  type       MediaType    @default(IMAGE)
+  position   Int          @default(0)
+  isPrimary  Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([productId])
+  @@unique([productId, position])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
 }
 
 model ProductVariant {
@@ -75,10 +110,16 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String
+  role         Role     @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]
   sessions     Session[]
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Order {
@@ -118,4 +159,14 @@ model Session {
   userId    String
   createdAt DateTime @default(now())
   lastSeen  DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  meta      Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
 }

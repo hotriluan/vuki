@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSiteUrl } from '@/lib/seo';
-import { products, categories } from '@/lib/data';
+import { getProducts, getCategories } from '@/lib/data';
 
 const staticPaths = ['']; // home
 
-export function GET() {
+export async function GET() {
   const base = getSiteUrl().replace(/\/$/, '');
   const urls: { loc: string; lastmod?: string; changefreq?: string; priority?: number }[] = [];
   const now = new Date().toISOString();
@@ -12,8 +12,9 @@ export function GET() {
     const url = `${base}/${p}`.replace(/\/$/, '');
     urls.push({ loc: url, lastmod: now, priority: 1.0 });
   });
-  categories.forEach(c => urls.push({ loc: `${base}/category/${c.slug}`, lastmod: now, priority: 0.7 }));
-  products.forEach(p => urls.push({ loc: `${base}/product/${p.slug}`, lastmod: now, priority: 0.8 }));
+  const [cats, prods] = await Promise.all([getCategories(), getProducts()]);
+  cats.forEach(c => urls.push({ loc: `${base}/category/${c.slug}`, lastmod: now, priority: 0.7 }));
+  prods.forEach((p: any) => urls.push({ loc: `${base}/product/${p.slug}`, lastmod: now, priority: 0.8 }));
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +

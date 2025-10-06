@@ -11,30 +11,36 @@ import { useLanguage } from '@/context/LanguageContext';
 export default function CartPage() {
   const { state, setQty, remove, clear, applyCoupon, removeCoupon, coupon, shippingFee, discountAmount, subtotal, tax, total, vatEnabled, setVatEnabled, isCheckoutReady } = useCart() as any;
   const { t, locale, setLocale } = useLanguage();
-  const itemsDetailed = state.items
-    .map((it: { productId: string; quantity: number; variantId?: string | null }) => {
-      const product = findProductById(it.productId);
-      if (!product) return null;
-      let base = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
-      let variantLabel: string | undefined;
-      if (it.variantId && product.variants) {
-        const v = product.variants.find(v => v.id === it.variantId);
-        if (v) {
-          variantLabel = v.label;
-          if (typeof v.overridePrice === 'number') base = v.overridePrice;
-          else if (typeof v.priceDiff === 'number') base = base + v.priceDiff;
-        }
-      }
-      return {
-        product,
-        quantity: it.quantity,
-        unitPrice: base,
-        lineTotal: base * it.quantity,
-        variantId: it.variantId,
-        variantLabel
-      };
-    })
-    .filter(Boolean) as Array<{ product: ReturnType<typeof findProductById>; quantity: number; unitPrice: number; lineTotal: number; variantId?: string | null; variantLabel?: string }>; 
+  const [itemsDetailed, setItemsDetailed] = React.useState<Array<{ product: any; quantity: number; unitPrice: number; lineTotal: number; variantId?: string | null; variantLabel?: string }>>([]);
+  React.useEffect(() => {
+    let alive = true;
+    Promise.all(state.items.map((it: { productId: string; quantity: number; variantId?: string | null }) => findProductById(it.productId).then(product => ({ it, product }))))
+      .then(results => {
+        if (!alive) return;
+        const mapped = results.filter(r => r.product).map(({ it, product }) => {
+          let base = (product.salePrice && product.salePrice < product.price) ? product.salePrice : product.price;
+          let variantLabel: string | undefined;
+            if (it.variantId && product.variants) {
+              const v = product.variants.find((v: any) => v.id === it.variantId);
+              if (v) {
+                variantLabel = v.label;
+                if (typeof v.overridePrice === 'number') base = v.overridePrice;
+                else if (typeof v.priceDiff === 'number') base = base + v.priceDiff;
+              }
+            }
+          return {
+            product,
+            quantity: it.quantity,
+            unitPrice: base,
+            lineTotal: base * it.quantity,
+            variantId: it.variantId,
+            variantLabel
+          };
+        });
+        setItemsDetailed(mapped);
+      });
+    return () => { alive = false; };
+  }, [state.items]);
 
   // subtotal now provided by context; itemsDetailed only used for rendering lines
 

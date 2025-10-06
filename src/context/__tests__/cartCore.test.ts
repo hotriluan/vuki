@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { cartReducer, computeTotals, computeDiscount, COUPONS, type CartState } from '../cartCore';
-import { products } from '@/lib/data';
+import { products } from '@/lib/__legacyTestStubs';
 
 function baseState(): CartState { return { items: [], coupon: null }; }
 

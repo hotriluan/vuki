@@ -9,7 +9,7 @@ import { buildProductMetadata, buildProductJsonLd } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { WishlistButton } from '@/components/WishlistButton';
-import { ProductImage } from '@/components/ProductImage';
+import { ProductImageGallery } from '@/components/ProductImageGallery';
 import { pushRecentlyViewed } from '@/lib/recentlyViewed';
 import { getAggregatedRating } from '@/lib/reviews';
 
@@ -46,7 +46,6 @@ export async function generateStaticParams() {
 export default async function ProductPage({ params }: Props) {
   const product = await productService.getBySlug(params.slug);
   if (!product) return notFound();
-  const image = product.images[0];
   const agg = getAggregatedRating(product.id);
   const jsonLd = {
     ...buildProductJsonLd(product),
@@ -56,7 +55,7 @@ export default async function ProductPage({ params }: Props) {
       reviewCount: agg.count
     }} : {})
   } as any;
-  const category = product.categoryIds?.length ? findCategoryBySlug(product.categoryIds[0]) : null;
+  const category = product.categoryIds?.length ? await findCategoryBySlug(product.categoryIds[0]) : null;
   const breadcrumb = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -70,8 +69,8 @@ export default async function ProductPage({ params }: Props) {
       ...(category ? [{
         '@type': 'ListItem',
         position: 2,
-        name: category.name,
-        item: `/category/${category.slug}`
+        name: category!.name,
+        item: `/category/${category!.slug}`
       }] : []),
       {
         '@type': 'ListItem',
@@ -90,13 +89,12 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 grid gap-10 md:grid-cols-2" data-page="product">
-      <div>
-        {image && (
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded border">
-            <ProductImage src={image} alt={product.name} fill className="object-cover" />
-            <WishlistButton productId={product.id} variant="detail" />
-          </div>
-        )}
+      <div className="relative">
+        <ProductImageGallery 
+          images={product.images || []} 
+          productName={product.name}
+        />
+        <WishlistButton productId={product.id} variant="detail" className="absolute top-4 left-4 z-10" />
       </div>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
@@ -105,7 +103,10 @@ export default async function ProductPage({ params }: Props) {
             <Price price={product.price} salePrice={product.salePrice} />
           </div>
         </div>
-        <p className="text-sm leading-relaxed text-gray-700 max-w-prose">{product.description}</p>
+        <div 
+          className="text-sm leading-relaxed text-gray-700 max-w-prose prose prose-sm"
+          dangerouslySetInnerHTML={{ __html: product.description }}
+        />
         <AddToCartButton product={product} />
       </div>
       <Script id="ld-product" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

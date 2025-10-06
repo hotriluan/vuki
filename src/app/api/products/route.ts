@@ -1,27 +1,34 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { activeProductWhere } from '@/lib/productVisibility';
 
 // GET /api/products?category=slug&page=1&limit=12
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const categorySlug = searchParams.get('category') || undefined;
+  const idsParam = searchParams.get('ids');
+  const ids = idsParam ? idsParam.split(',').filter(Boolean) : undefined;
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '12', 10)));
   const skip = (page - 1) * limit;
 
-  let where: any = undefined;
+  const now = new Date();
+  let where: any = activeProductWhere(now);
   if (categorySlug) {
-    where = { categories: { some: { category: { slug: categorySlug } } } };
+    where = { ...where, categories: { some: { category: { slug: categorySlug } } } };
+  }
+  if (ids && ids.length) {
+    where = { ...where, id: { in: ids } };
   }
 
   try {
     const [items, total] = await Promise.all([
-      prisma.product.findMany({
+      (prisma as any).product.findMany({
         where,
-        include: { categories: { include: { category: true } }, variants: true },
+        include: { categories: { include: { category: true } }, variants: true, media: { orderBy: { position: 'asc' } } },
         orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+        skip: ids ? 0 : skip,
+        take: ids ? 250 : limit,
       }),
       prisma.product.count({ where })
     ]);
@@ -40,6 +47,7 @@ export async function GET(req: Request) {
         salePrice: p.salePrice,
         featured: p.featured,
         images: p.images,
+    primaryImage: p.primaryImage || (p.media?.find((m: any) => m.isPrimary)?.url) || (Array.isArray(p.images) ? p.images[0] : null),
         categories: p.categories.map((pc: any) => pc.category.slug),
         variants: p.variants.map((v: any) => ({ id: v.id, label: v.label, stock: v.stock, priceDiff: v.priceDiff }))
       }))

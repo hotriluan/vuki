@@ -4,35 +4,37 @@ import { useMemo, useTransition } from 'react';
 import { filterAndSortProducts } from '@/lib/filter';
 import type { Product } from '@/lib/types';
 import { ProductCard } from '@/components/ProductCard';
+import { QuickViewModal, useQuickView } from '@/components/QuickViewModal';
 import { productsByCategorySlug } from '@/lib/data';
 
-interface FilterClientProps { slug: string; initial: ReturnType<typeof productsByCategorySlug>; }
+interface FilterClientProps { slug: string; initial: Awaited<ReturnType<typeof productsByCategorySlug>>; }
 
 export function FilterClient({ slug, initial }: FilterClientProps) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const { selectedProduct, isOpen, openQuickView, closeQuickView } = useQuickView();
 
   const sort = params.get('sort') || 'newest';
   const min = parseInt(params.get('min') || '0', 10) || 0;
   const max = parseInt(params.get('max') || '0', 10) || 0; // 0 = no upper bound
   const sizesParam = params.get('sizes') || '';
-  const selectedSizes = sizesParam ? sizesParam.split(',').filter(Boolean) : [];
+  const selectedSizes = useMemo(() => (
+    sizesParam ? sizesParam.split(',').filter(Boolean) : []
+  ), [sizesParam]);
 
   const variantPool = useMemo(() => {
     const map = new Map<string, { id: string; label: string; stock: number | undefined }>();
-    initial.forEach(p => {
-      p.variants?.forEach(v => {
+    initial.forEach((p: any) => {
+      p.variants?.forEach((v: any) => {
         if (!map.has(v.id)) map.set(v.id, { id: v.id, label: v.label, stock: v.stock });
       });
     });
     return Array.from(map.values()).sort((a,b) => a.label.localeCompare(b.label));
   }, [initial]);
 
-  const filtered = useMemo(() => {
-    return filterAndSortProducts(initial as any, { sort: sort as any, min, max, sizes: selectedSizes });
-  }, [initial, sort, min, max, selectedSizes]);
+  const filtered = useMemo(() => filterAndSortProducts(initial as any, { sort: sort as any, min, max, sizes: selectedSizes }), [initial, sort, min, max, selectedSizes]);
 
   function updateParam(key: string, value: string) {
     const sp = new URLSearchParams(params.toString());
@@ -136,9 +138,16 @@ export function FilterClient({ slug, initial }: FilterClientProps) {
       )}
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filtered.map((p: Product) => (
-          <ProductCard key={p.id} product={p} />
+          <ProductCard key={p.id} product={p} onQuickView={openQuickView} />
         ))}
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal 
+        product={selectedProduct}
+        isOpen={isOpen}
+        onClose={closeQuickView}
+      />
     </div>
   );
 }

@@ -38,23 +38,38 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
     }
   }, [open]);
 
-  const itemsDetailed = state.items
-    .map((it: { productId: string; quantity: number; variantId?: string | null }) => {
-      const product = findProductById(it.productId);
-      if (!product) return null;
-      let base = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
-      let variantLabel: string | undefined;
-      if (it.variantId && product.variants) {
-        const v = product.variants.find(v => v.id === it.variantId);
-        if (v) {
-          variantLabel = v.label;
-          if (typeof v.overridePrice === 'number') base = v.overridePrice;
-          else if (typeof v.priceDiff === 'number') base = base + v.priceDiff;
-        }
-      }
-      return { product, quantity: it.quantity, unitPrice: base, lineTotal: base * it.quantity, variantId: it.variantId, variantLabel };
-    })
-    .filter(Boolean) as Array<{ product: NonNullable<ReturnType<typeof findProductById>>; quantity: number; unitPrice: number; lineTotal: number; variantId?: string | null; variantLabel?: string }>;
+  const [itemsDetailed, setItemsDetailed] = useState<Array<{ product: any; quantity: number; unitPrice: number; lineTotal: number; variantId?: string | null; variantLabel?: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await Promise.all(
+        state.items.map(async (it: { productId: string; quantity: number; variantId?: string | null }) => {
+          try {
+            const product: any = await findProductById(it.productId);
+            if (!product) return null;
+            let base = product?.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
+            let variantLabel: string | undefined;
+            if (it.variantId && Array.isArray(product?.variants)) {
+              const v = product.variants.find((v: any) => v.id === it.variantId);
+              if (v) {
+                variantLabel = v.label;
+                if (typeof v.overridePrice === 'number') base = v.overridePrice;
+                else if (typeof v.priceDiff === 'number') base = base + v.priceDiff;
+              }
+            }
+            const safeImages = Array.isArray(product.images) ? product.images : [];
+            return { product: { ...product, images: safeImages }, quantity: it.quantity, unitPrice: base, lineTotal: base * it.quantity, variantId: it.variantId, variantLabel };
+          } catch (e) {
+            console.error('[CartDrawer] load product failed', it.productId, e);
+            return null;
+          }
+        })
+      );
+      if (!cancelled) setItemsDetailed(list.filter(Boolean) as any);
+    })();
+    return () => { cancelled = true; };
+  }, [state.items]);
 
   // subtotal, discount, shipping, total now from context
 
@@ -91,8 +106,10 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             // Key includes variant + index to avoid potential duplicate id collisions (warning observed in tests for p-1)
             <div key={`${product.id}${variantId ? '-' + variantId : ''}-${idx}`} className="flex gap-3">
               <div className="relative w-16 h-20 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-                {product.images[0] && (
+                {Array.isArray(product.images) && product.images.length > 0 ? (
                   <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="64px" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 select-none">No Img</div>
                 )}
               </div>
               <div className="flex-1 flex flex-col text-xs">

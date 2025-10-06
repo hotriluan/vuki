@@ -6,9 +6,10 @@ import { CurrencyProvider } from '@/context/CurrencyContext';
 import { CartDrawer } from '../CartDrawer';
 import { LanguageProvider } from '@/context/LanguageContext';
 import * as data from '@/lib/data';
+import { products } from '@/lib/__legacyTestStubs';
 
 // Minimal mock products access if needed
-const firstTwo = data.products.slice(0,2);
+const firstTwo = products.slice(0,2);
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   return <LanguageProvider><CurrencyProvider><CartProvider>{children}</CartProvider></CurrencyProvider></LanguageProvider>;

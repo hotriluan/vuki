@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeTotals, COUPONS, type CartState } from '../cartCore';
-import { products } from '@/lib/data';
+import { products } from '@/lib/__legacyTestStubs';
 
 // Helper to find product with variants
 const productWithVariants = products.find(p => p.variants && p.variants.length > 0)!;
@@ -19,7 +19,7 @@ describe('Extended pricing cases', () => {
 
   it('variant priceDiff increases subtotal correctly', () => {
     // choose variant with priceDiff (sz-41 has priceDiff 20_000 in dataset)
-    const variant = productWithVariants.variants!.find(v => typeof v.priceDiff === 'number');
+  const variant = productWithVariants.variants!.find((v: any) => typeof v.priceDiff === 'number');
     expect(variant).toBeTruthy();
     const base = productWithVariants.salePrice && productWithVariants.salePrice < productWithVariants.price
       ? productWithVariants.salePrice

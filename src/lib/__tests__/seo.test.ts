@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { buildProductMetadata, buildProductJsonLd, productDescription } from '../seo';
-import { products } from '../data';
+import { products } from '../__legacyTestStubs';
 
 const sample = products[0];
 

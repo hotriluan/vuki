@@ -27,7 +27,7 @@ describe('InfiniteCategory', () => {
 
   beforeEach(() => {
     // mock productsByCategorySlug so we fully control length
-    vi.spyOn(data, 'productsByCategorySlug').mockImplementation((s: string) => {
+    vi.spyOn(data, 'productsByCategorySlug').mockImplementation(async (s: string) => {
       return s === slug ? fakeProducts : [];
     });
     // Mock IntersectionObserver

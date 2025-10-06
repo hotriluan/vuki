@@ -5,7 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import { CartDrawer } from '../CartDrawer';
-import { products } from '@/lib/data';
+import { products } from '@/lib/__legacyTestStubs';
 
 function wrapper(ui: React.ReactElement) {
   return render(

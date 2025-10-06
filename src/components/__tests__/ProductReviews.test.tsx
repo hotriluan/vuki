@@ -33,7 +33,8 @@ describe('ProductReviews', () => {
     fireEvent.click(screen.getByRole('button', { name: /Gửi/i }));
     // Heading should reflect incremented count
     const updated = screen.getByText(/Đánh giá/);
-    const updatedCount = parseInt(updated.textContent?.match(/\((\d+)\)/)![1],10);
+    const m = updated.textContent?.match(/\((\d+)\)/);
+    const updatedCount = m ? parseInt(m[1],10) : 0;
     expect(updatedCount).toBe(initialCount + 1);
     // New author name should appear
     expect(screen.getByText('Tester')).toBeInTheDocument();

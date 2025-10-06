@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 
 type Locale = 'vi' | 'en';
 
@@ -56,12 +56,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLocale(l);
     if (typeof window !== 'undefined') window.localStorage.setItem(LS_KEY, l);
   };
-  const t = (key: keyof typeof DICT): string => {
+  const t = useCallback((key: keyof typeof DICT): string => {
     const entry = DICT[key];
     if (!entry) return String(key);
-    return typeof entry[locale] === 'function' ? (entry[locale] as any)() : (entry[locale] as string);
-  };
-  const value = useMemo(() => ({ locale, setLocale: change, t }), [locale]);
+    const val = entry[locale];
+    return typeof val === 'function' ? (val as any)() : (val as string);
+  }, [locale]);
+  const value = useMemo(() => ({ locale, setLocale: change, t }), [locale, t]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
