@@ -1,0 +1,64 @@
+name: Deploy to Mat Bao Premium Cloud
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Test job (existing)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm run test:unit
+        
+      - name: Run lint
+        run: npm run lint
+        
+      - name: Build application
+        run: npm run build
+
+  # Deploy job (new)
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Deploy to Mat Bao
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MATBAO_HOST }}
+          username: ${{ secrets.MATBAO_USERNAME }}
+          key: ${{ secrets.MATBAO_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.MATBAO_USERNAME }}/public_html
+            echo "🔄 Pulling latest changes..."
+            git pull origin main
+            echo "🚀 Running deployment script..."
+            chmod +x deploy.sh
+            ./deploy.sh
+            echo "✅ Deployment completed!"
+            
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to Mat Bao successful!"
+          else
+            echo "❌ Deployment to Mat Bao failed!"
+          fi
