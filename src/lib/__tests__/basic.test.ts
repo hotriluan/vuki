@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { mockProducts, mockCategories } from './mockData';
 
 describe('Basic Tests', () => {
   it('should pass basic test', () => {
@@ -7,5 +8,11 @@ describe('Basic Tests', () => {
 
   it('should handle string operations', () => {
     expect('vuki'.toUpperCase()).toBe('VUKI');
+  });
+
+  it('should have mock data available', () => {
+    expect(mockProducts).toHaveLength(4);
+    expect(mockCategories).toHaveLength(4);
+    expect(mockProducts[0].id).toBe('p-1');
   });
 });
